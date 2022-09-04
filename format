@@ -1,0 +1,17 @@
+The simplest case is requesting a specific format, for example with -f 22 you can download the format with format code equal to 22. You can get the list of available format codes for particular video using --list-formats or -F. Note that these format codes are extractor specific.
+
+You can also use a file extension (currently 3gp, aac, flv, m4a, mp3, mp4, ogg, wav, webm are supported) to download the best quality format of a particular file extension served as a single file, e.g. -f webm will download the best quality format with the webm extension served as a single file.
+
+You can also use special names to select particular edge case formats:
+
+best: Select the best quality format represented by a single file with video and audio.
+worst: Select the worst quality format represented by a single file with video and audio.
+bestvideo: Select the best quality video-only format (e.g. DASH video). May not be available.
+worstvideo: Select the worst quality video-only format. May not be available.
+bestaudio: Select the best quality audio only-format. May not be available.
+worstaudio: Select the worst quality audio only-format. May not be available.
+For example, to download the worst quality video-only format you can use -f worstvideo.
+
+If you want to download multiple videos and they don't have the same formats available, you can specify the order of preference using slashes. Note that slash is left-associative, i.e. formats on the left hand side are preferred, for example -f 22/17/18 will download format 22 if it's available, otherwise it will download format 17 if it's available, otherwise it will download format 18 if it's available, otherwise it will complain that no suitable formats are available for download.
+
+If you want to download several formats of the same video use a comma as a separator, e.g. -f 22,17,18 will download all these three formats, of course if they are available. Or a more sophisticated example combined with the precedence feature: -f 136/137/mp4/bestvideo,140/m4a/bestaudio.

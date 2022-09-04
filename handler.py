@@ -1,5 +1,6 @@
 import logging
 import subprocess
+import pyperclip
 import win32com.shell.shell as shell
 
 proxy_server_query = 'reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyServer'
@@ -32,11 +33,9 @@ def change_address(new_address):
 
 def fill_in():
     try:
-        value = subprocess.check_output(
-            proxy_server_query).decode("utf-8").split()[-1]
-        return value
+        pyperclip.paste()
     except:
-        value = "0.0.0.0:0"
+        value = ""
         return value
 
 

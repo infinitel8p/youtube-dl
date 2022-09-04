@@ -1,10 +1,10 @@
 import sys
-import proxy
+import handler
 import logging
+import downloader
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
-from lib.py_toggle import PyToggle
 
 # Uncomment below for terminal log messages
 # logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -25,25 +25,24 @@ class QTextEditLogger(logging.Handler):
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
-        self.setWindowTitle('Proxy Settings')
+        self.setWindowTitle('Youtube Downloader')
         my_icon = QIcon()
         my_icon.addFile('icon.png')
         self.setWindowIcon(my_icon)
         # resize window
-        self.resize(350, 250)
+        self.resize(650, 650)
         # create container and layout
         self.container = QFrame()
         self.container.setObjectName("container")
         self.container.setStyleSheet("#container {background-color: #222}")
 
         # create widgets
-        self.edit = QLineEdit(proxy.fill_in())
-        self.button_save = QPushButton('Apply new Proxy Address')
+        self.edit = QLineEdit(handler.fill_in())
+        self.button_save = QPushButton('Download')
         self.button_save.setFixedWidth(150)
-        self.label = QLabel("Turn Proxy ON/OFF:")
+        self.label = QLabel("File Format:")
         self.label.setStyleSheet("color: white;")
         self.label.setFixedWidth(150)
-        self.toggle = PyToggle()
         self.logTextBox = QTextEditLogger(self)
 
         # You can format what is printed to text box
@@ -61,8 +60,6 @@ class MainWindow(QMainWindow):
         self.nested_layout_1.addWidget(self.button_save)
         self.nested_layout_2.addWidget(
             self.label, Qt.AlignCenter, Qt.AlignLeft)
-        self.nested_layout_2.addWidget(
-            self.toggle, Qt.AlignCenter, Qt.AlignCenter)
         self.main_layout.addLayout(self.nested_layout_1)
         self.main_layout.addLayout(self.nested_layout_2)
         self.main_layout.addWidget(self.logTextBox.widget)
@@ -78,7 +75,7 @@ class MainWindow(QMainWindow):
         self.show()
 
     def proxy_changer(self):
-        proxy.change_address(self.edit.text())
+        downloader.run(self.edit.text())
 
 
 if __name__ == '__main__':
@@ -89,7 +86,7 @@ if __name__ == '__main__':
     settings = MainWindow()
     settings.show()
     # check current settings
-    proxy.status_check()
-    proxy.server_check()
+    handler.status_check()
+    handler.server_check()
     # run the main Qt loop
     sys.exit(app.exec())
