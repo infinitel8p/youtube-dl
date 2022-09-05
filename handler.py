@@ -31,14 +31,6 @@ def change_address(new_address):
     logger.info(f"Changed Proxy Server to {new_address}")
 
 
-def fill_in():
-    try:
-        pyperclip.paste()
-    except:
-        value = ""
-        return value
-
-
 def status_check():
     global logger
     # check current regkey value for proxy

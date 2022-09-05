@@ -30,19 +30,27 @@ class MainWindow(QMainWindow):
         my_icon.addFile('icon.png')
         self.setWindowIcon(my_icon)
         # resize window
-        self.resize(650, 650)
+        self.resize(650, 550)
         # create container and layout
         self.container = QFrame()
         self.container.setObjectName("container")
         self.container.setStyleSheet("#container {background-color: #222}")
 
         # create widgets
-        self.edit = QLineEdit(handler.fill_in())
-        self.button_save = QPushButton('Download')
-        self.button_save.setFixedWidth(150)
+        self.edit = QLineEdit()
+        self.edit.paste()
+        self.button_paste = QPushButton("Paste")
+        self.button_paste.setFixedWidth(100)
+        self.button_clear = QPushButton("Clear")
+        self.button_paste.setFixedWidth(100)
+        self.button_save = QPushButton("Download")
+        self.button_save.setFixedWidth(100)
         self.label = QLabel("File Format:")
         self.label.setStyleSheet("color: white;")
         self.label.setFixedWidth(150)
+        self.label2 = QLabel("Empty")
+        self.label2.setStyleSheet("color: white;")
+        self.label2.setFixedWidth(150)
         self.logTextBox = QTextEditLogger(self)
 
         # You can format what is printed to text box
@@ -57,9 +65,13 @@ class MainWindow(QMainWindow):
         self.nested_layout_1 = QHBoxLayout()
         self.nested_layout_2 = QHBoxLayout()
         self.nested_layout_1.addWidget(self.edit)
+        self.nested_layout_1.addWidget(self.button_paste)
+        self.nested_layout_1.addWidget(self.button_clear)
         self.nested_layout_1.addWidget(self.button_save)
         self.nested_layout_2.addWidget(
             self.label, Qt.AlignCenter, Qt.AlignLeft)
+        self.nested_layout_2.addWidget(
+            self.label2, Qt.AlignCenter, Qt.AlignRight)
         self.main_layout.addLayout(self.nested_layout_1)
         self.main_layout.addLayout(self.nested_layout_2)
         self.main_layout.addWidget(self.logTextBox.widget)
@@ -68,13 +80,21 @@ class MainWindow(QMainWindow):
         self.container.setLayout(self.main_layout)
         self.setCentralWidget(self.container)
 
-        # add button signal to proxy_changer slot
-        self.button_save.clicked.connect(self.proxy_changer)
+        # add button callbacks
+        self.button_paste.clicked.connect(self.paste_clipboard)
+        self.button_clear.clicked.connect(self.clear_line)
+        self.button_save.clicked.connect(self.run_download)
 
         # show window
         self.show()
 
-    def proxy_changer(self):
+    def paste_clipboard(self):
+        self.edit.paste()
+
+    def clear_line(self):
+        self.edit.clear()
+
+    def run_download(self):
         downloader.run(self.edit.text())
 
 
@@ -83,10 +103,7 @@ if __name__ == '__main__':
     # create QtApplication
     app = QApplication(sys.argv)
     # create and show the window
-    settings = MainWindow()
-    settings.show()
-    # check current settings
-    handler.status_check()
-    handler.server_check()
+    downloader_app = MainWindow()
+    downloader_app.show()
     # run the main Qt loop
     sys.exit(app.exec())
