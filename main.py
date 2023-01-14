@@ -1,10 +1,13 @@
+from pydub import AudioSegment
 from tkinter import filedialog
 import customtkinter
+import subprocess
+import platform
 import tempfile
 import requests
 import logging
-import pytube
 import pytube.request
+import pytube
 import io
 import os
 from PIL import Image
@@ -18,11 +21,12 @@ class TkinterHandler(logging.Handler):
         logging.Handler.__init__(self)
         self.text_widget = text_widget
         self.text_widget.configure(state='disabled')
+        self.log_format = logging.Formatter('%(message)s\n')
 
     def emit(self, record):
         self.text_widget.configure(state='normal')
         self.text_widget.insert(
-            customtkinter.END, Root.log_format.format(record))
+            customtkinter.END, self.log_format.format(record))
         self.text_widget.see(customtkinter.END)
         self.text_widget.configure(state='disabled')
         self.text_widget.update()  # Refresh the widget
@@ -35,11 +39,18 @@ class Root(customtkinter.CTk):
 
         # Set up the logger
         self.logger = logging.getLogger()
-        self.log_format = logging.Formatter('%(message)s\n')
         self.logger.setLevel(logging.INFO)
 
         # change chunk size to 25 kilobytes to have working progressbar even on small files
         pytube.request.default_range_size = 25600
+
+        # Determine the operating system
+        current_os = platform.system()
+
+        if current_os == "Windows":
+            self.ffmpeg_path = r"C:\Users\Ludo\Desktop\youtube-dl\ffmpeg.exe"
+        elif current_os == "Darwin":
+            self.ffmpeg_path = r"C:\Users\Ludo\Desktop\youtube-dl\ffmpeg"
 
         # Create the GUI
         self.title('YouTube Downloader')
@@ -74,6 +85,19 @@ class Root(customtkinter.CTk):
         self.handler = TkinterHandler(self.log_output)
         self.logger.addHandler(self.handler)
 
+        # add a frame for download options
+        self.grid_2 = customtkinter.CTkFrame(self, fg_color="transparent")
+        self.grid_2.pack(padx=50, pady=(10, 10), side=customtkinter.BOTTOM)
+
+        self.playlist_slider = customtkinter.CTkSwitch(
+            self.grid_2, text="Playlist")
+        self.playlist_slider.grid(row=1, column=0)
+
+        self.subtype_menu = customtkinter.CTkOptionMenu(self.grid_2, width=100, values=[
+            "3gp", "aac", "flv", "m4a", "mp3", "mp4", "ogg", "wav", "webm"], command=self.set_subtype)
+        self.subtype_menu.set("mp4")
+        self.subtype_menu.grid(row=1, column=1)
+
         # add a frame for input and download button
         self.grid_1 = customtkinter.CTkFrame(self, fg_color="transparent")
         self.grid_1.pack(padx=50, pady=(10, 10), side=customtkinter.BOTTOM)
@@ -81,21 +105,117 @@ class Root(customtkinter.CTk):
         # Set up the URL input widget
         self.url_input = customtkinter.CTkEntry(
             self.grid_1, width=250, font=("Arial", 10))
-        self.url_input.grid(row=0, column=0, padx=(0, 2.5), pady=(0, 5))
+        self.url_input.grid(row=0, column=0, padx=(0, 2.5))
 
         # Set up the download button
         self.download_button = customtkinter.CTkButton(
             self.grid_1, text='Download', command=self.download, width=50)
-        self.download_button.grid(row=0, column=1, padx=(2.5, 0), pady=(0, 5))
+        self.download_button.grid(row=0, column=1, padx=(2.5, 0))
 
-        self.playlist_slider = customtkinter.CTkSwitch(
-            self.grid_1, text="Playlist")
-        self.playlist_slider.grid(row=1, column=0, pady=(5, 0))
+    def set_subtype(self, event):
+        self.subtype_menu.set(event)
 
-        self.subtype_menu = customtkinter.CTkOptionMenu(self.grid_1, values=[
-            "3gp", "aac", "flv", "m4a", "mp3", "mp4", "ogg", "wav", "webm"], command=self.set_subtype)
-        self.subtype_menu.set("mp4")
-        self.subtype_menu.grid(row=1, column=1, pady=(5, 0))
+    def download(self):
+        self.downloaded = False
+
+        if self.playlist_slider.get() == 0:
+            try:
+                # Get the URL from the input widget
+                self.url = self.url_input.get()
+                self.logger.info(f'[ Analyzing ] : {self.url}')
+
+                # Create a YouTube object
+                self.yt = pytube.YouTube(
+                    self.url, on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
+
+                # set cover_label to video thumbnail
+                self.r = requests.get(self.yt.thumbnail_url)
+                if self.r.status_code == 200:
+                    self.thumbnail_image = Image.open(
+                        io.BytesIO(self.r.content))
+                    self.thumbnail = customtkinter.CTkImage(
+                        self.thumbnail_image, size=(150, 150))
+                    self.cover_label.configure(image=self.thumbnail)
+
+                # Get the file name from the video title
+                self.file_name = self.yt.title
+                self.label.configure(text=f"Downloading: {self.file_name}")
+
+                # create a progressbar
+                self.progress_bar = customtkinter.CTkProgressBar(
+                    self, width=325, mode='determinate')
+                self.progress_bar.pack()
+                self.progress_bar.set(0)
+
+                # Find audio and select file path
+                self.video = self.yt.streams.filter(
+                    only_audio=True, subtype=self.subtype_menu.get()).order_by('abr').desc().first()
+                if self.video is None:
+                    self.logger.info(
+                        f"[ Error ] : {self.subtype_menu.get()} subtype not available for this video. Video will be downloaded in mp4 and converted to {self.subtype_menu.get()}")
+
+                    self.video = self.yt.streams.filter(
+                        only_audio=True, subtype="mp4").order_by('abr').desc().first()
+
+                    # Add the .mp4 extension to the file name
+                    self.file_name = f"{self.file_name}.mp4"
+
+                    # Choose a file to save the audio
+                    self.file_path = filedialog.asksaveasfilename(
+                        title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*mp4"),))
+                    self.file_path_parts = os.path.split(self.file_path)
+
+                    self.logger.info(
+                        f'[ Saving video to ] : {self.file_path_parts[0]}')
+                    self.logger.info(
+                        f'[ Downloading ] : {self.file_path_parts[1]}')
+
+                    # download
+                    self.video.download(
+                        self.file_path_parts[0], filename=self.file_path_parts[1])
+
+                    # Open the MP4 file and convert it to selected format
+
+                    while not self.downloaded:
+                        pass
+
+                    self.logger.info(
+                        f'[ Converting ] : {self.file_path_parts[1]} to .{self.subtype_menu.get()} format')
+                    self.new_file = self.file_path.replace(
+                        "mp4", self.subtype_menu.get())
+
+                    # convert the file using ffmpeg and delete initial .mp4
+                    self.conversion = subprocess.run(
+                        f'ffmpeg -i "{self.file_path}" "{self.new_file}"', shell=True, check=True)
+
+                    if self.conversion.returncode == 0:
+                        os.remove(self.file_path)
+
+                    self.logger.info('[ Finished ] : Video downloaded')
+
+                else:
+                    # Add the extension to the file name
+                    self.file_name = f"{self.file_name}.{self.subtype_menu.get()}"
+
+                    # Choose a file to save the audio
+                    self.file_path = filedialog.asksaveasfilename(
+                        title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*{self.subtype_menu.get()}"),))
+                    self.file_path_parts = os.path.split(self.file_path)
+
+                    self.logger.info(
+                        f'[ Saving video to ] : {self.file_path_parts[0]}')
+
+                    # download
+                    self.video.download(
+                        self.file_path_parts[0], filename=self.file_path_parts[1])
+
+                # set cover and label to inital values
+                self.cover_label.configure(image=self.cover_tk)
+                self.label.configure(text="Insert Video Link:")
+                self.progress_bar.destroy()
+
+            except pytube.exceptions.RegexMatchError:
+                self.logger.info("[ Error ] : Could not find link")
 
     def progress_function(self, stream, chunk, bytes_remaining):
         self.percentage_completed = (
@@ -104,74 +224,12 @@ class Root(customtkinter.CTk):
         self.progress_bar.update()
 
     def completed_function(self, stream, file_path):
-        self.logger.info('[ Finished ] : Video downloaded')
-
-    def download(self):
-        try:
-            # Get the URL from the input widget
-            self.url = self.url_input.get()
-            self.logger.info(f'[ Downloading ] : {self.url}')
-
-            # Create a YouTube object
-            self.yt = pytube.YouTube(self.url, on_progress_callback=self.progress_function,
-                                     on_complete_callback=self.completed_function)
-
-            # set cover_label to video thumbnail
-            self.r = requests.get(self.yt.thumbnail_url)
-            if self.r.status_code == 200:
-                self.thumbnail_image = Image.open(io.BytesIO(self.r.content))
-                self.thumbnail = customtkinter.CTkImage(
-                    self.thumbnail_image, size=(150, 150))
-                self.cover_label.configure(image=self.thumbnail)
-
-            # Get the file name from the video title
-            self.file_name = self.yt.title
-            self.label.configure(text=f"Downloading: {self.file_name}")
-
-            # create a progressbar
-            self.progress_bar = customtkinter.CTkProgressBar(
-                self, width=325, mode='determinate')
-            self.progress_bar.pack()
-            self.progress_bar.set(0)
-
-            # Add the .mp3 extension to the file name
-            self.file_name = self.file_name + f".{self.subtype_menu.get()}"
-
-            # Choose a file to save the audio
-            self.file_path = filedialog.asksaveasfilename(
-                title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*{self.subtype_menu.get()}"),))
-            self.file_path_parts = os.path.split(self.file_path)
-
-            self.logger.info(
-                f'[ Saving video to ] : {self.file_path_parts[0]}')
-
-            # Download the audio to the selected file path
-            try:
-                self.video = self.yt.streams.filter(
-                    only_audio=True, subtype=self.subtype_menu.get()).order_by('abr').desc().first()
-                if self.video is None:
-                    raise ValueError(
-                        f"[ Error ] : {self.subtype_menu.get()} subtype not available for this video.")
-                else:
-                    self.video.download(
-                        self.file_path_parts[0], filename=self.file_path_parts[1])
-            except ValueError as e:
-                self.logger.info(e)
-
-            # set cover and label to inital values
-            self.cover_label.configure(image=self.cover_tk)
-            self.label.configure(text="Insert Video Link:")
-            self.progress_bar.destroy()
-
-        except pytube.exceptions.RegexMatchError:
-            self.logger.info("[ Error ] : Could not find link")
-
-    def set_subtype(self, event):
-        self.subtype_menu.set(event)
+        self.downloaded = True
 
 
-# Run the GUI
-app = Root()
-app.mainloop()
+if __name__ == "__main__":
+    # Run the GUI
+    app = Root()
+    app.mainloop()
 
 # https://www.youtube.com/watch?v=W5dHTc03oKs
