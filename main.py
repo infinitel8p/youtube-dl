@@ -185,11 +185,18 @@ class Root(customtkinter.CTk):
                         "mp4", self.subtype_menu.get())
 
                     # convert the file using ffmpeg and delete initial .mp4
+                    with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as temp_file:
+                        self.thumbnail_image.save(temp_file, format='jpeg')
+
+                    subprocess.run(
+                        f'ffmpeg -i "{self.file_path}" "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}"', shell=True, check=True)
                     self.conversion = subprocess.run(
-                        f'ffmpeg -i "{self.file_path}" "{self.new_file}"', shell=True, check=True)
+                        f'ffmpeg -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" -i {temp_file.name} -map 0:0 -map 1:0 -c copy -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover(Front)" "{self.new_file}"')
 
                     if self.conversion.returncode == 0:
                         os.remove(self.file_path)
+                        os.remove(
+                            os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}"))
 
                     self.logger.info('[ Finished ] : Video downloaded')
 
