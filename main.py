@@ -289,6 +289,8 @@ class Root(customtkinter.CTk):
         self.cover_label.configure(image=self.cover_tk)
         self.label.configure(text="Insert Video Link:")
         self.progress_bar.destroy()
+        # delete album cover from temp
+        os.remove(temp_file)
 
     def progress_function(self, stream, chunk, bytes_remaining):
         self.percentage_completed = (
