@@ -1,0 +1,1 @@
+pyinstaller --noconfirm --onefile --windowed --icon "C:/Users/Ludo/Desktop/youtube-dl/1384060.ico" --name "YouTube Downloader" --add-data "C:/Python310/Lib/site-packages/customtkinter;customtkinter/" "C:/Users/Ludo/Desktop/youtube-dl/main.py"
