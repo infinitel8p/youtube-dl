@@ -118,6 +118,7 @@ class Root(customtkinter.CTk):
         self.downloaded = False
 
         if self.playlist_slider.get() == 0:
+            # Get the URL from the input widget
             self.url = self.url_input.get()
             self.logger.info(f'[ Analyzing ] : {self.url}')
             try:
@@ -126,20 +127,21 @@ class Root(customtkinter.CTk):
                         "[ Playlist detected! ] : Downloading first video")
                     self.playlist = pytube.Playlist(self.url)
                     # download first song of playlist
-                    print(self.playlist.video_urls[0])
                     # Create a YouTube object
                     self.yt = pytube.YouTube(
                         self.playlist.video_urls[0], on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
-                    self.download_handler(self.yt)
                 else:
-                    # Get the URL from the input widget
+                    # Create a YouTube object
                     self.yt = pytube.YouTube(
                         self.url, on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
-                    self.download_handler(self.yt)
+                # start downloading
+                self.download_handler(self.yt)
+
             except pytube.exceptions.RegexMatchError:
                 self.logger.info("[ Error ] : Could not find link")
 
         if self.playlist_slider.get() == 1:
+            # Get the URL from the input widget
             self.url = self.url_input.get()
             self.logger.info(f'[ Analyzing ] : {self.url}')
             try:
@@ -148,21 +150,20 @@ class Root(customtkinter.CTk):
                         "[ Playlist detected! ] : Downloading all videos")
                     self.playlist = pytube.Playlist(self.url)
                     for video in self.playlist.video_urls:
-                        print(video)
                         # Create a YouTube object
                         self.yt = pytube.YouTube(
                             video, on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
                         self.download_handler(self.yt)
                 else:
-                    # Get the URL from the input widget
+                    # Create a YouTube object
                     self.yt = pytube.YouTube(
                         self.url, on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
                     self.download_handler(self.yt)
+
             except pytube.exceptions.RegexMatchError:
                 self.logger.info("[ Error ] : Could not find link")
 
     def download_handler(self, video):
-
         # set cover_label to video thumbnail
         self.r = requests.get(video.thumbnail_url)
         if self.r.status_code == 200:
@@ -182,13 +183,16 @@ class Root(customtkinter.CTk):
         self.progress_bar.pack()
         self.progress_bar.set(0)
 
-        # Find audio and select file path
+        # Find audio by selected subtype with best average bitrate and select file path
         self.video = video.streams.filter(
             only_audio=True, subtype=self.subtype_menu.get()).order_by('abr').desc().first()
+
+        # if subtype has not been found
         if self.video is None:
             self.logger.info(
                 f"[ Error ] : {self.subtype_menu.get()} subtype not available for this video. Video will be downloaded in mp4 and converted to {self.subtype_menu.get()}")
 
+            # find audio with best average bitrate
             self.video = video.streams.filter(
                 only_audio=True, subtype="mp4").order_by('abr').desc().first()
 
@@ -197,7 +201,7 @@ class Root(customtkinter.CTk):
 
             # Choose a file to save the audio
             self.file_path = filedialog.asksaveasfilename(
-                title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*mp4"),))
+                title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*mp4")))
             self.file_path_parts = os.path.split(self.file_path)
 
             self.logger.info(
@@ -244,6 +248,7 @@ class Root(customtkinter.CTk):
 
             self.logger.info('[ Finished ] : Video downloaded')
 
+        # if subtype has been found
         else:
             # Add the extension to the file name
             self.file_name = f"{self.file_name}.{self.subtype_menu.get()}"
@@ -304,4 +309,5 @@ if __name__ == "__main__":
     app = Root()
     app.mainloop()
 
-# https://www.youtube.com/watch?v=W5dHTc03oKs
+# random video:   https://www.youtube.com/watch?v=W5dHTc03oKs
+# video in playlist:   https://www.youtube.com/watch?v=6VCsABl390Y&list=PLHgWzIsvopLKZnzD8y2Vw0VAoQsMALJBL&index=1
