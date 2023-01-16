@@ -49,8 +49,8 @@ class Root(customtkinter.CTk):
         if current_os == "Windows":
             self.ffmpeg_path = f"{os.path.dirname(os.path.abspath(__file__))}\\ffmpeg.exe"
         elif current_os == "Darwin":
-            self.ffmpeg_path = f"{os.path.dirname(os.path.abspath(__file__))}\\ffmpeg"
-            subprocess.run("chmod +x ffmpeg")
+            self.ffmpeg_path = f"{os.path.dirname(os.path.abspath(__file__))}/ffmpeg"
+            subprocess.run(f"chmod +x {self.ffmpeg_path}", shell=True)
             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
 
         # Create the GUI
@@ -230,10 +230,10 @@ class Root(customtkinter.CTk):
                     self.thumbnail_image.save(temp_file, format='jpeg')
 
                 subprocess.run(
-                    f'ffmpeg -i "{self.file_path}" "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}"', shell=True, check=True)
+                    f'{self.ffmpeg_path} -i "{self.file_path}" "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}"', shell=True, check=True)
                 self.logger.info(f"[ Adding Cover ] : {temp_file.name}")
                 self.conversion = subprocess.run(
-                    f'ffmpeg -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" -i {temp_file.name} -map 0:0 -map 1:0 -c copy -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover(Front)" "{self.new_file}"')
+                    f'{self.ffmpeg_path} -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" -i {temp_file.name} -map 0:0 -map 1:0 -c copy -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover(Front)" "{self.new_file}"')
 
                 if self.conversion.returncode == 0:
                     os.remove(self.file_path)
@@ -241,7 +241,7 @@ class Root(customtkinter.CTk):
                         os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}"))
             else:
                 self.conversion = subprocess.run(
-                    f'ffmpeg -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" "{self.new_file}"')
+                    f'{self.ffmpeg_path} -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" "{self.new_file}"')
 
                 if self.conversion.returncode == 0:
                     os.remove(
@@ -279,7 +279,7 @@ class Root(customtkinter.CTk):
 
             self.logger.info(f"[ Adding Cover ] : {temp_file.name}")
             self.conversion = subprocess.run(
-                f'ffmpeg -i "{os.path.join(self.file_path_parts[0], self.temp_audio)}" -i "{temp_file.name}" -map 1 -map 0 -c copy -disposition:0 attached_pic "{self.file_path}"')
+                f'{self.ffmpeg_path} -i "{os.path.join(self.file_path_parts[0], self.temp_audio)}" -i "{temp_file.name}" -map 1 -map 0 -c copy -disposition:0 attached_pic "{self.file_path}"')
 
             if self.conversion.returncode == 0:
                 os.remove(os.path.join(
@@ -292,7 +292,7 @@ class Root(customtkinter.CTk):
         self.label.configure(text="Insert Video Link:")
         self.progress_bar.destroy()
         # delete album cover from temp
-        os.remove(temp_file)
+        os.remove(temp_file.name)
 
     def progress_function(self, stream, chunk, bytes_remaining):
         self.percentage_completed = (
