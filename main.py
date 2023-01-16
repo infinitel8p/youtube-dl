@@ -203,7 +203,7 @@ class Root(customtkinter.CTk):
 
             # Choose a file to save the audio
             self.file_path = filedialog.asksaveasfilename(
-                title="Select audio file location", initialfile=self.file_name, filetypes=("Audio files", f"*mp4"))
+                title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f".mp4"),))
             self.file_path_parts = os.path.split(self.file_path)
 
             self.logger.info(
@@ -256,7 +256,7 @@ class Root(customtkinter.CTk):
 
             # Choose a file to save the audio
             self.file_path = filedialog.asksaveasfilename(
-                title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*{self.subtype_menu.get()}"),))
+                title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f".{self.subtype_menu.get()}"),))
             self.file_path_parts = os.path.split(self.file_path)
 
             self.logger.info(
