@@ -55,6 +55,7 @@ class Root(customtkinter.CTk):
         # Create the GUI
         self.title('YouTube Downloader')
         customtkinter.set_appearance_mode("dark")
+        customtkinter.set_default_color_theme(self.resource_path("red.json"))
 
         # add thumbnail placeholder and iconbitmap
         self.yt_icon = "https://cdn-icons-png.flaticon.com/512/1384/1384060.png"
@@ -87,7 +88,8 @@ class Root(customtkinter.CTk):
 
         # add a frame for download options
         self.grid_2 = customtkinter.CTkFrame(self, fg_color="transparent")
-        self.grid_2.pack(padx=50, pady=(10, 10), side=customtkinter.BOTTOM)
+        self.grid_2.pack(padx=50, pady=(10, 10),
+                         side=customtkinter.BOTTOM)
 
         self.playlist_slider = customtkinter.CTkSwitch(
             self.grid_2, text="Playlist")
@@ -100,7 +102,8 @@ class Root(customtkinter.CTk):
 
         # add a frame for input and download button
         self.grid_1 = customtkinter.CTkFrame(self, fg_color="transparent")
-        self.grid_1.pack(padx=50, pady=(10, 10), side=customtkinter.BOTTOM)
+        self.grid_1.pack(padx=50, pady=(10, 10),
+                         side=customtkinter.BOTTOM)
 
         # Set up the URL input widget
         self.url_input = customtkinter.CTkEntry(
