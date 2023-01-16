@@ -48,9 +48,9 @@ class Root(customtkinter.CTk):
         current_os = platform.system()
 
         if current_os == "Windows":
-            self.ffmpeg_path = r"C:\Users\Ludo\Desktop\youtube-dl\ffmpeg.exe"
+            self.ffmpeg_path = f"{os.path.dirname(os.path.abspath(__file__))}\\ffmpeg.exe"
         elif current_os == "Darwin":
-            self.ffmpeg_path = r"C:\Users\Ludo\Desktop\youtube-dl\ffmpeg"
+            self.ffmpeg_path = f"{os.path.dirname(os.path.abspath(__file__))}\\ffmpeg"
 
         # Create the GUI
         self.title('YouTube Downloader')
@@ -175,7 +175,6 @@ class Root(customtkinter.CTk):
                         self.file_path_parts[0], filename=self.file_path_parts[1])
 
                     # Open the MP4 file and convert it to selected format
-
                     while not self.downloaded:
                         pass
 
@@ -212,9 +211,29 @@ class Root(customtkinter.CTk):
                     self.logger.info(
                         f'[ Saving video to ] : {self.file_path_parts[0]}')
 
+                    self.temp_audio = self.file_path_parts[1].replace(
+                        ".mp4", "_temp.mp4")
+
                     # download
                     self.video.download(
-                        self.file_path_parts[0], filename=self.file_path_parts[1])
+                        self.file_path_parts[0], filename=self.temp_audio)
+
+                    # Open the MP4 file and convert it to selected format
+                    while not self.downloaded:
+                        pass
+
+                    # convert the file using ffmpeg and delete initial .mp4
+                    with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as temp_file:
+                        self.thumbnail_image.save(temp_file, format='jpeg')
+
+                    self.conversion = subprocess.run(
+                        f'ffmpeg -i "{os.path.join(self.file_path_parts[0], self.temp_audio)}" -i "{temp_file.name}" -map 1 -map 0 -c copy -disposition:0 attached_pic "{self.file_path}"')
+
+                    if self.conversion.returncode == 0:
+                        os.remove(os.path.join(
+                            self.file_path_parts[0], self.temp_audio))
+
+                    self.logger.info('[ Finished ] : Video downloaded')
 
                 # set cover and label to inital values
                 self.cover_label.configure(image=self.cover_tk)
@@ -232,6 +251,7 @@ class Root(customtkinter.CTk):
 
     def completed_function(self, stream, file_path):
         self.downloaded = True
+        print(stream)
 
 
 if __name__ == "__main__":
