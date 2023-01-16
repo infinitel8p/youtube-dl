@@ -50,6 +50,8 @@ class Root(customtkinter.CTk):
             self.ffmpeg_path = f"{os.path.dirname(os.path.abspath(__file__))}\\ffmpeg.exe"
         elif current_os == "Darwin":
             self.ffmpeg_path = f"{os.path.dirname(os.path.abspath(__file__))}\\ffmpeg"
+            subprocess.run("chmod +x ffmpeg")
+            os.environ["PATH"] += os.pathsep + self.ffmpeg_path
 
         # Create the GUI
         self.title('YouTube Downloader')
@@ -201,7 +203,7 @@ class Root(customtkinter.CTk):
 
             # Choose a file to save the audio
             self.file_path = filedialog.asksaveasfilename(
-                title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*mp4")))
+                title="Select audio file location", initialfile=self.file_name, filetypes=("Audio files", f"*mp4"))
             self.file_path_parts = os.path.split(self.file_path)
 
             self.logger.info(
