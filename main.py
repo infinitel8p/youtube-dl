@@ -224,7 +224,7 @@ class Root(customtkinter.CTk):
             self.video.download(
                 self.file_path_parts[0], filename=self.file_path_parts[1])
 
-            # Open the MP4 file and convert it to selected format
+            # wait for the file to be downloaded
             while not self.downloaded:
                 pass
 
@@ -272,13 +272,13 @@ class Root(customtkinter.CTk):
                 f'[ Saving video to ] : {self.file_path_parts[0]}')
 
             self.temp_audio = self.file_path_parts[1].replace(
-                ".mp4", "_temp.mp4")
+                f".{self.subtype_menu.get()}", f"_temp.{self.subtype_menu.get()}")
 
             # download
             self.video.download(
                 self.file_path_parts[0], filename=self.temp_audio)
 
-            # Open the MP4 file and convert it to selected format
+            # wait for the file to be downloaded
             while not self.downloaded:
                 pass
 
@@ -321,6 +321,3 @@ if __name__ == "__main__":
     # Run the GUI
     app = Root()
     app.mainloop()
-
-# random video:   https://www.youtube.com/watch?v=W5dHTc03oKs
-# video in playlist:   https://www.youtube.com/watch?v=6VCsABl390Y&list=PLHgWzIsvopLKZnzD8y2Vw0VAoQsMALJBL&index=1
