@@ -233,7 +233,7 @@ class Root(customtkinter.CTk):
                     f'{self.ffmpeg_path} -i "{self.file_path}" "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}"', shell=True, check=True)
                 self.logger.info(f"[ Adding Cover ] : {temp_file.name}")
                 self.conversion = subprocess.run(
-                    f'{self.ffmpeg_path} -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" -i {temp_file.name} -map 0:0 -map 1:0 -c copy -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover(Front)" "{self.new_file}"')
+                    f'{self.ffmpeg_path} -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" -i {temp_file.name} -map 0:0 -map 1:0 -c copy -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover(Front)" "{self.new_file}"', shell=True)
 
                 if self.conversion.returncode == 0:
                     os.remove(self.file_path)
@@ -241,7 +241,7 @@ class Root(customtkinter.CTk):
                         os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}"))
             else:
                 self.conversion = subprocess.run(
-                    f'{self.ffmpeg_path} -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" "{self.new_file}"')
+                    f'{self.ffmpeg_path} -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" "{self.new_file}"', shell=True)
 
                 if self.conversion.returncode == 0:
                     os.remove(
@@ -279,7 +279,7 @@ class Root(customtkinter.CTk):
 
             self.logger.info(f"[ Adding Cover ] : {temp_file.name}")
             self.conversion = subprocess.run(
-                f'{self.ffmpeg_path} -i "{os.path.join(self.file_path_parts[0], self.temp_audio)}" -i "{temp_file.name}" -map 1 -map 0 -c copy -disposition:0 attached_pic "{self.file_path}"')
+                f'{self.ffmpeg_path} -i "{os.path.join(self.file_path_parts[0], self.temp_audio)}" -i "{temp_file.name}" -map 1 -map 0 -c copy -disposition:0 attached_pic "{self.file_path}"', shell=True)
 
             if self.conversion.returncode == 0:
                 os.remove(os.path.join(
