@@ -1,1 +1,3 @@
-pyinstaller --noconfirm --onefile --windowed --icon "C:/Users/Ludo/Desktop/youtube-dl/1384060.ico" --name "YouTube Downloader" --add-data "C:/Python310/Lib/site-packages/customtkinter;customtkinter/" "C:/Users/Ludo/Desktop/youtube-dl/main.py"
+pyinstaller --noconfirm --onefile --windowed --icon "C:/Users/Ludo/Desktop/youtube-dl/1384060.ico" --name "YouTube Downloader" --add-data "C:/Python310/Lib/site-packages/customtkinter;customtkinter/" --add-data "C:/Users/Ludo/Desktop/youtube-dl/ffmpeg.exe;." "C:/Users/Ludo/Desktop/youtube-dl/main.py"
+
+pyinstaller --noconfirm --onefile --windowed --icon "/Users/m1/Downloads/youtube-dl/config/1384060.ico" --name "YouTube Downloader" --add-data "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/customtkinter:customtkinter/" --add-data "/Users/m1/Downloads/youtube-dl/ffmpeg:." "/Users/m1/Downloads/youtube-dl/main.py"

@@ -76,6 +76,10 @@
   {
    "optionDest": "datas",
    "value": "C:/Python310/Lib/site-packages/customtkinter;customtkinter/"
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/Users/Ludo/Desktop/youtube-dl/ffmpeg.exe;."
   }
  ],
  "nonPyinstallerOptions": {
