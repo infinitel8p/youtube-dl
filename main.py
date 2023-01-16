@@ -7,13 +7,13 @@ import requests
 import logging
 import pytube.request
 import pytube
+import sys
 import io
 import os
 from PIL import Image
 
 
 # Create a handler to display log messages in the GUI
-
 
 class TkinterHandler(logging.Handler):
     def __init__(self, text_widget):
@@ -35,7 +35,6 @@ class Root(customtkinter.CTk):
 
     def __init__(self):
         super().__init__()
-
         # Set up the logger
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.INFO)
@@ -47,9 +46,9 @@ class Root(customtkinter.CTk):
         current_os = platform.system()
 
         if current_os == "Windows":
-            self.ffmpeg_path = f"{os.path.dirname(os.path.abspath(__file__))}\\ffmpeg.exe"
+            self.ffmpeg_path = self.resource_path("ffmpeg.exe")
         elif current_os == "Darwin":
-            self.ffmpeg_path = f"{os.path.dirname(os.path.abspath(__file__))}/ffmpeg"
+            self.ffmpeg_path = self.resource_path("ffmpeg")
             subprocess.run(f"chmod +x {self.ffmpeg_path}", shell=True)
             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
 
@@ -112,6 +111,16 @@ class Root(customtkinter.CTk):
         self.download_button = customtkinter.CTkButton(
             self.grid_1, text='Download', command=self.download, width=50)
         self.download_button.grid(row=0, column=1, padx=(2.5, 0))
+
+    def resource_path(self, relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+
+        return os.path.join(base_path, relative_path)
 
     def set_subtype(self, event):
         self.subtype_menu.set(event)
