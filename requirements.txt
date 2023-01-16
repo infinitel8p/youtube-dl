@@ -1,3 +1,5 @@
 customtkinter
 requests
+Pillow
 pytube
+tk
