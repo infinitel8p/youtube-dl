@@ -1,4 +1,3 @@
-from pydub import AudioSegment
 from tkinter import filedialog
 import customtkinter
 import subprocess
@@ -94,7 +93,7 @@ class Root(customtkinter.CTk):
         self.playlist_slider.grid(row=1, column=0)
 
         self.subtype_menu = customtkinter.CTkOptionMenu(self.grid_2, width=100, values=[
-            "3gp", "aac", "flv", "m4a", "mp3", "mp4", "ogg", "wav", "webm"], command=self.set_subtype)
+            "mp3", "mp4", "aac", "oog", "flac", "wav"], command=self.set_subtype)
         self.subtype_menu.set("mp4")
         self.subtype_menu.grid(row=1, column=1)
 
@@ -119,129 +118,172 @@ class Root(customtkinter.CTk):
         self.downloaded = False
 
         if self.playlist_slider.get() == 0:
+            self.url = self.url_input.get()
+            self.logger.info(f'[ Analyzing ] : {self.url}')
             try:
-                # Get the URL from the input widget
-                self.url = self.url_input.get()
-                self.logger.info(f'[ Analyzing ] : {self.url}')
-
-                # Create a YouTube object
-                self.yt = pytube.YouTube(
-                    self.url, on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
-
-                # set cover_label to video thumbnail
-                self.r = requests.get(self.yt.thumbnail_url)
-                if self.r.status_code == 200:
-                    self.thumbnail_image = Image.open(
-                        io.BytesIO(self.r.content))
-                    self.thumbnail = customtkinter.CTkImage(
-                        self.thumbnail_image, size=(150, 150))
-                    self.cover_label.configure(image=self.thumbnail)
-
-                # Get the file name from the video title
-                self.file_name = self.yt.title
-                self.label.configure(text=f"Downloading: {self.file_name}")
-
-                # create a progressbar
-                self.progress_bar = customtkinter.CTkProgressBar(
-                    self, width=325, mode='determinate')
-                self.progress_bar.pack()
-                self.progress_bar.set(0)
-
-                # Find audio and select file path
-                self.video = self.yt.streams.filter(
-                    only_audio=True, subtype=self.subtype_menu.get()).order_by('abr').desc().first()
-                if self.video is None:
+                if "youtube.com/playlist?list" in self.url or "youtube.com/watch?v" and "&list=" in self.url:
                     self.logger.info(
-                        f"[ Error ] : {self.subtype_menu.get()} subtype not available for this video. Video will be downloaded in mp4 and converted to {self.subtype_menu.get()}")
-
-                    self.video = self.yt.streams.filter(
-                        only_audio=True, subtype="mp4").order_by('abr').desc().first()
-
-                    # Add the .mp4 extension to the file name
-                    self.file_name = f"{self.file_name}.mp4"
-
-                    # Choose a file to save the audio
-                    self.file_path = filedialog.asksaveasfilename(
-                        title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*mp4"),))
-                    self.file_path_parts = os.path.split(self.file_path)
-
-                    self.logger.info(
-                        f'[ Saving video to ] : {self.file_path_parts[0]}')
-                    self.logger.info(
-                        f'[ Downloading ] : {self.file_path_parts[1]}')
-
-                    # download
-                    self.video.download(
-                        self.file_path_parts[0], filename=self.file_path_parts[1])
-
-                    # Open the MP4 file and convert it to selected format
-                    while not self.downloaded:
-                        pass
-
-                    self.logger.info(
-                        f'[ Converting ] : {self.file_path_parts[1]} to .{self.subtype_menu.get()} format')
-                    self.new_file = self.file_path.replace(
-                        "mp4", self.subtype_menu.get())
-
-                    # convert the file using ffmpeg and delete initial .mp4
-                    with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as temp_file:
-                        self.thumbnail_image.save(temp_file, format='jpeg')
-
-                    subprocess.run(
-                        f'ffmpeg -i "{self.file_path}" "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}"', shell=True, check=True)
-                    self.conversion = subprocess.run(
-                        f'ffmpeg -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" -i {temp_file.name} -map 0:0 -map 1:0 -c copy -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover(Front)" "{self.new_file}"')
-
-                    if self.conversion.returncode == 0:
-                        os.remove(self.file_path)
-                        os.remove(
-                            os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}"))
-
-                    self.logger.info('[ Finished ] : Video downloaded')
-
+                        "[ Playlist detected! ] : Downloading first video")
+                    self.playlist = pytube.Playlist(self.url)
+                    # download first song of playlist
+                    print(self.playlist.video_urls[0])
+                    # Create a YouTube object
+                    self.yt = pytube.YouTube(
+                        self.playlist.video_urls[0], on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
+                    self.download_handler(self.yt)
                 else:
-                    # Add the extension to the file name
-                    self.file_name = f"{self.file_name}.{self.subtype_menu.get()}"
-
-                    # Choose a file to save the audio
-                    self.file_path = filedialog.asksaveasfilename(
-                        title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*{self.subtype_menu.get()}"),))
-                    self.file_path_parts = os.path.split(self.file_path)
-
-                    self.logger.info(
-                        f'[ Saving video to ] : {self.file_path_parts[0]}')
-
-                    self.temp_audio = self.file_path_parts[1].replace(
-                        ".mp4", "_temp.mp4")
-
-                    # download
-                    self.video.download(
-                        self.file_path_parts[0], filename=self.temp_audio)
-
-                    # Open the MP4 file and convert it to selected format
-                    while not self.downloaded:
-                        pass
-
-                    # convert the file using ffmpeg and delete initial .mp4
-                    with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as temp_file:
-                        self.thumbnail_image.save(temp_file, format='jpeg')
-
-                    self.conversion = subprocess.run(
-                        f'ffmpeg -i "{os.path.join(self.file_path_parts[0], self.temp_audio)}" -i "{temp_file.name}" -map 1 -map 0 -c copy -disposition:0 attached_pic "{self.file_path}"')
-
-                    if self.conversion.returncode == 0:
-                        os.remove(os.path.join(
-                            self.file_path_parts[0], self.temp_audio))
-
-                    self.logger.info('[ Finished ] : Video downloaded')
-
-                # set cover and label to inital values
-                self.cover_label.configure(image=self.cover_tk)
-                self.label.configure(text="Insert Video Link:")
-                self.progress_bar.destroy()
-
+                    # Get the URL from the input widget
+                    self.yt = pytube.YouTube(
+                        self.url, on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
+                    self.download_handler(self.yt)
             except pytube.exceptions.RegexMatchError:
                 self.logger.info("[ Error ] : Could not find link")
+
+        if self.playlist_slider.get() == 1:
+            self.url = self.url_input.get()
+            self.logger.info(f'[ Analyzing ] : {self.url}')
+            try:
+                if "youtube.com/playlist?list" in self.url or "youtube.com/watch?v" and "&list=" in self.url:
+                    self.logger.info(
+                        "[ Playlist detected! ] : Downloading all videos")
+                    self.playlist = pytube.Playlist(self.url)
+                    for video in self.playlist.video_urls:
+                        print(video)
+                        # Create a YouTube object
+                        self.yt = pytube.YouTube(
+                            video, on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
+                        self.download_handler(self.yt)
+                else:
+                    # Get the URL from the input widget
+                    self.yt = pytube.YouTube(
+                        self.url, on_progress_callback=self.progress_function, on_complete_callback=self.completed_function)
+                    self.download_handler(self.yt)
+            except pytube.exceptions.RegexMatchError:
+                self.logger.info("[ Error ] : Could not find link")
+
+    def download_handler(self, video):
+
+        # set cover_label to video thumbnail
+        self.r = requests.get(video.thumbnail_url)
+        if self.r.status_code == 200:
+            self.thumbnail_image = Image.open(
+                io.BytesIO(self.r.content))
+            self.thumbnail = customtkinter.CTkImage(
+                self.thumbnail_image, size=(150, 150))
+            self.cover_label.configure(image=self.thumbnail)
+
+        # Get the file name from the video title
+        self.file_name = video.title
+        self.label.configure(text=f"Downloading: {self.file_name}")
+
+        # create a progressbar
+        self.progress_bar = customtkinter.CTkProgressBar(
+            self, width=325, mode='determinate')
+        self.progress_bar.pack()
+        self.progress_bar.set(0)
+
+        # Find audio and select file path
+        self.video = video.streams.filter(
+            only_audio=True, subtype=self.subtype_menu.get()).order_by('abr').desc().first()
+        if self.video is None:
+            self.logger.info(
+                f"[ Error ] : {self.subtype_menu.get()} subtype not available for this video. Video will be downloaded in mp4 and converted to {self.subtype_menu.get()}")
+
+            self.video = video.streams.filter(
+                only_audio=True, subtype="mp4").order_by('abr').desc().first()
+
+            # Add the .mp4 extension to the file name
+            self.file_name = f"{self.file_name}.mp4"
+
+            # Choose a file to save the audio
+            self.file_path = filedialog.asksaveasfilename(
+                title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*mp4"),))
+            self.file_path_parts = os.path.split(self.file_path)
+
+            self.logger.info(
+                f'[ Saving video to ] : {self.file_path_parts[0]}')
+            self.logger.info(
+                f'[ Downloading ] : {self.file_path_parts[1]}')
+
+            # download
+            self.video.download(
+                self.file_path_parts[0], filename=self.file_path_parts[1])
+
+            # Open the MP4 file and convert it to selected format
+            while not self.downloaded:
+                pass
+
+            self.logger.info(
+                f'[ Converting ] : {self.file_path_parts[1]} to .{self.subtype_menu.get()} format')
+            self.new_file = self.file_path.replace(
+                "mp4", self.subtype_menu.get())
+
+            if self.subtype_menu.get() == "mp3":
+                # convert the file using ffmpeg and delete initial .mp4
+                with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as temp_file:
+                    self.thumbnail_image.save(temp_file, format='jpeg')
+
+                subprocess.run(
+                    f'ffmpeg -i "{self.file_path}" "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}"', shell=True, check=True)
+                self.logger.info(
+                    f"[ Adding Cover ] : {temp_file.name}")
+                self.conversion = subprocess.run(
+                    f'ffmpeg -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" -i {temp_file.name} -map 0:0 -map 1:0 -c copy -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover(Front)" "{self.new_file}"')
+
+                if self.conversion.returncode == 0:
+                    os.remove(self.file_path)
+                    os.remove(
+                        os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}"))
+            else:
+                self.conversion = subprocess.run(
+                    f'ffmpeg -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" "{self.new_file}"')
+
+                if self.conversion.returncode == 0:
+                    os.remove(
+                        os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}"))
+
+            self.logger.info('[ Finished ] : Video downloaded')
+
+        else:
+            # Add the extension to the file name
+            self.file_name = f"{self.file_name}.{self.subtype_menu.get()}"
+
+            # Choose a file to save the audio
+            self.file_path = filedialog.asksaveasfilename(
+                title="Select audio file location", initialfile=self.file_name, filetypes=(("Audio files", f"*{self.subtype_menu.get()}"),))
+            self.file_path_parts = os.path.split(self.file_path)
+
+            self.logger.info(
+                f'[ Saving video to ] : {self.file_path_parts[0]}')
+
+            self.temp_audio = self.file_path_parts[1].replace(
+                ".mp4", "_temp.mp4")
+
+            # download
+            self.video.download(
+                self.file_path_parts[0], filename=self.temp_audio)
+
+            # Open the MP4 file and convert it to selected format
+            while not self.downloaded:
+                pass
+
+            # convert the file using ffmpeg and delete initial .mp4
+            with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as temp_file:
+                self.thumbnail_image.save(temp_file, format='jpeg')
+
+            self.conversion = subprocess.run(
+                f'ffmpeg -i "{os.path.join(self.file_path_parts[0], self.temp_audio)}" -i "{temp_file.name}" -map 1 -map 0 -c copy -disposition:0 attached_pic "{self.file_path}"')
+
+            if self.conversion.returncode == 0:
+                os.remove(os.path.join(
+                    self.file_path_parts[0], self.temp_audio))
+
+            self.logger.info('[ Finished ] : Video downloaded')
+
+        # set cover and label to inital values
+        self.cover_label.configure(image=self.cover_tk)
+        self.label.configure(text="Insert Video Link:")
+        self.progress_bar.destroy()
 
     def progress_function(self, stream, chunk, bytes_remaining):
         self.percentage_completed = (
@@ -251,7 +293,10 @@ class Root(customtkinter.CTk):
 
     def completed_function(self, stream, file_path):
         self.downloaded = True
-        print(stream)
+        self.logger.info(f"""Name: {self.file_name}
+Average bitrate: {stream.abr}
+Mime type: {stream.mime_type}
+Audio Codec: {stream.audio_codec}""")
 
 
 if __name__ == "__main__":
