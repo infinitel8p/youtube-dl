@@ -229,8 +229,7 @@ class Root(customtkinter.CTk):
 
                 subprocess.run(
                     f'ffmpeg -i "{self.file_path}" "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}"', shell=True, check=True)
-                self.logger.info(
-                    f"[ Adding Cover ] : {temp_file.name}")
+                self.logger.info(f"[ Adding Cover ] : {temp_file.name}")
                 self.conversion = subprocess.run(
                     f'ffmpeg -i "{os.path.join(self.file_path_parts[0], f"temp_convert.{self.subtype_menu.get()}")}" -i {temp_file.name} -map 0:0 -map 1:0 -c copy -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover(Front)" "{self.new_file}"')
 
@@ -276,6 +275,7 @@ class Root(customtkinter.CTk):
             with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as temp_file:
                 self.thumbnail_image.save(temp_file, format='jpeg')
 
+            self.logger.info(f"[ Adding Cover ] : {temp_file.name}")
             self.conversion = subprocess.run(
                 f'ffmpeg -i "{os.path.join(self.file_path_parts[0], self.temp_audio)}" -i "{temp_file.name}" -map 1 -map 0 -c copy -disposition:0 attached_pic "{self.file_path}"')
 
