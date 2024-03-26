@@ -3,6 +3,7 @@ import customtkinter
 import tempfile
 import requests
 import logging
+import platform
 import io
 import os
 import sys
@@ -54,7 +55,8 @@ class Root(customtkinter.CTk):
 
         with tempfile.NamedTemporaryFile(suffix='.ico', delete=False) as temp_file:
             self.cover_image.save(temp_file, format='ico')
-        self.iconbitmap(temp_file.name)
+        if platform.system() == "Windows":
+            self.iconbitmap(temp_file.name)
 
         self.cover_label = customtkinter.CTkLabel(
             self, text="", image=self.cover_tk)

@@ -5,20 +5,22 @@ import threading
 import customtkinter
 from yt_dlp import YoutubeDL
 
+logger = logging.getLogger("yt-dlp_app_logger")
+
 
 class YTDLLogger(object):
     def info(self, msg):
-        logging.info(msg)
+        logger.info(msg)
 
     def debug(self, msg):
         if "[download]" not in msg:
-            logging.debug(msg)
+            logger.debug(msg)
 
     def warning(self, msg):
-        logging.warning(msg)
+        logger.warning(msg)
 
     def error(self, msg):
-        logging.error(msg)
+        logger.error(msg)
 
 
 def download(root_application, url, format):
@@ -29,6 +31,7 @@ def download(root_application, url, format):
         url (str): The URL of the video to download
         format (str): One of the following formats: mp3, mp4, aac, ogg, flv, 3gp, m4a, webm, wav
     """
+    logger.info("Download complete.")
 
     # binary path
     current_os = platform.system()
@@ -53,9 +56,9 @@ def download(root_application, url, format):
             # logger.info("Postprocessing started.")
             pass
         elif d['status'] == 'finished':
-            logging.info("Postprocessing finished.")
+            logger.info("Postprocessing finished.")
         else:
-            logging.info(f"Unknown status: {d['status']}")
+            logger.info(f"Unknown status: {d['status']}")
 
     def download_thread():
         # Set common options
@@ -74,7 +77,7 @@ def download(root_application, url, format):
         with YoutubeDL(options) as ydl:
             ydl.download(["https://www.youtube.com/watch?v=FAyKDaXEAgc"])
 
-        logging.info("Download complete.")
+        logger.info("Download complete.")
 
         # Use after method to safely interact with the UI from the other thread
         root_application.after(0, root_application.progress_bar.destroy)
