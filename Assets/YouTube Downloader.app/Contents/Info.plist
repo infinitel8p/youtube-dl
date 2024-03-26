@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>YouTube Downloader</string>
+	<key>CFBundleExecutable</key>
+	<string>YouTube Downloader</string>
+	<key>CFBundleIconFile</key>
+	<string>generated-212e83ef5077d2641ddda86ce53d0e1c95b0c41d86ee3f15b771a6c16d80de91.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>YouTube Downloader</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>YouTube Downloader</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.0.0</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
+</plist>
