@@ -58,6 +58,8 @@ class Root(customtkinter.CTk):
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme(
             os.path.join(self.resource_path("themes"), "red.json"))
+        self.resizable(False, False)
+        self.geometry("500x500")
 
         # add thumbnail placeholder and iconbitmap
         self.yt_icon = "https://cdn-icons-png.flaticon.com/512/1384/1384060.png"
@@ -75,8 +77,13 @@ class Root(customtkinter.CTk):
             self, text="", image=self.cover_tk)
         self.cover_label.pack(pady=(10, 0))
 
+        # add frame for title label
+        self.top_grid = customtkinter.CTkFrame(self, fg_color="transparent")
+        self.top_grid.pack()
+
         # add title label
-        self.label = customtkinter.CTkLabel(self, text="Insert Video Link:")
+        self.label = customtkinter.CTkLabel(
+            self.top_grid, text="Insert Video Link:")
         self.label.pack()
 
         # Set up the log output widget
@@ -140,10 +147,20 @@ class Root(customtkinter.CTk):
         elif d['status'] == 'finished':
             self.progress_bar.set(1)
 
+    def postprocessor_hooks(self, d):
+        if d['status'] == 'started':
+            # self.logger.info("Postprocessing started.")
+            pass
+        elif d['status'] == 'finished':
+            self.logger.info("Postprocessing finished.")
+        else:
+            self.logger.info(f"Unknown status: {d['status']}")
+
     def download(self):
+        self.label.destroy()
         self.progress_bar = customtkinter.CTkProgressBar(
-            self, mode='determinate')
-        self.progress_bar.pack(pady=20)
+            self.top_grid, mode='determinate')
+        self.progress_bar.pack(pady=(10, 10))
         self.progress_bar.set(0)
         self.download_button.configure(state=customtkinter.DISABLED)
 
@@ -157,15 +174,19 @@ class Root(customtkinter.CTk):
                 }],
                 'logger': YTDLLogger(),
                 'progress_hooks': [self.progress_hook],
+                'postprocessor_hooks': [self.postprocessor_hooks],
             }
 
-            # Download with the specified options
             with YoutubeDL(options) as ydl:
                 ydl.download(["https://www.youtube.com/watch?v=FAyKDaXEAgc"])
 
             self.logger.info("Download complete.")
-            # Use after method to safely interact with the UI from another thread
+
+            # Use after method to safely interact with the UI from the other thread
             self.after(0, self.progress_bar.destroy)
+            self.label = customtkinter.CTkLabel(
+                self.top_grid, text="Insert Video Link:")
+            self.label.pack()
             self.after(0, self.download_button.configure(
                 state=customtkinter.NORMAL))
 

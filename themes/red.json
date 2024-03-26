@@ -169,8 +169,8 @@
 			"#4A4D50"
 		],
 		"progress_color": [
-			"gray30",
-			"gray30"
+			"#FF0000",
+			"#FF0000"
 		],
 		"border_color": [
 			"gray",
