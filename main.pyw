@@ -1,4 +1,3 @@
-import threading
 from tkinter import filedialog
 import customtkinter
 import tempfile
@@ -8,8 +7,7 @@ import io
 import os
 import sys
 from PIL import Image
-import ffmpeg
-from yt_dlp import YoutubeDL
+import modules.downloader as dl
 
 
 class TkinterHandler(logging.Handler):
@@ -27,21 +25,6 @@ class TkinterHandler(logging.Handler):
         self.text_widget.see(customtkinter.END)
         self.text_widget.configure(state='disabled')
         self.text_widget.update()  # Refresh the widget
-
-
-class YTDLLogger(object):
-    def info(self, msg):
-        app.logger.info(msg)
-
-    def debug(self, msg):
-        if "[download]" not in msg:
-            app.logger.debug(msg)
-
-    def warning(self, msg):
-        app.logger.warning(msg)
-
-    def error(self, msg):
-        app.logger.error(msg)
 
 
 class Root(customtkinter.CTk):
@@ -122,7 +105,7 @@ class Root(customtkinter.CTk):
 
         # Set up the download button
         self.download_button = customtkinter.CTkButton(
-            self.grid_1, text='Download', command=self.download, width=50)
+            self.grid_1, text='Download', command=self.start_download, width=50)
         self.download_button.grid(row=0, column=1, padx=(2.5, 0))
 
     def resource_path(self, relative_path):
@@ -136,27 +119,11 @@ class Root(customtkinter.CTk):
         return os.path.join(base_path, relative_path)
 
     def set_subtype(self, event):
+        """Set the subtype of the video to download"""
         self.subtype_menu.set(event)
 
-    def progress_hook(self, d):
-        if d['status'] == 'downloading':
-            if d['total_bytes'] is not None:
-                progress = d['downloaded_bytes'] / d['total_bytes']
-                self.progress_bar.set(progress)
-                self.progress_bar.update()
-        elif d['status'] == 'finished':
-            self.progress_bar.set(1)
-
-    def postprocessor_hooks(self, d):
-        if d['status'] == 'started':
-            # self.logger.info("Postprocessing started.")
-            pass
-        elif d['status'] == 'finished':
-            self.logger.info("Postprocessing finished.")
-        else:
-            self.logger.info(f"Unknown status: {d['status']}")
-
-    def download(self):
+    def start_download(self):
+        """Start the download process"""
         self.label.destroy()
         self.progress_bar = customtkinter.CTkProgressBar(
             self.top_grid, mode='determinate')
@@ -164,35 +131,7 @@ class Root(customtkinter.CTk):
         self.progress_bar.set(0)
         self.download_button.configure(state=customtkinter.DISABLED)
 
-        def download_thread():
-            # Set common options
-            options = {
-                'format': 'bestvideo+bestaudio',
-                'postprocessors': [{
-                    'key': 'FFmpegVideoConvertor',
-                    'preferedformat': self.subtype_menu.get(),
-                }],
-                'logger': YTDLLogger(),
-                'progress_hooks': [self.progress_hook],
-                'postprocessor_hooks': [self.postprocessor_hooks],
-            }
-
-            with YoutubeDL(options) as ydl:
-                ydl.download(["https://www.youtube.com/watch?v=FAyKDaXEAgc"])
-
-            self.logger.info("Download complete.")
-
-            # Use after method to safely interact with the UI from the other thread
-            self.after(0, self.progress_bar.destroy)
-            self.label = customtkinter.CTkLabel(
-                self.top_grid, text="Insert Video Link:")
-            self.label.pack()
-            self.after(0, self.download_button.configure(
-                state=customtkinter.NORMAL))
-
-        # Create and start the download thread
-        thread = threading.Thread(target=download_thread)
-        thread.start()
+        dl.download(self, self.url_input.get(), self.subtype_menu.get())
 
 
 if __name__ == "__main__":
