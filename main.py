@@ -1,3 +1,4 @@
+
 from tkinter import filedialog
 import customtkinter
 import subprocess
@@ -5,6 +6,7 @@ import platform
 import tempfile
 import requests
 import logging
+import certifi
 import pytube.request
 import pytube
 import sys
@@ -93,12 +95,12 @@ class Root(customtkinter.CTk):
 
         self.playlist_slider = customtkinter.CTkSwitch(
             self.grid_2, text="Playlist")
-        self.playlist_slider.grid(row=1, column=0)
+        self.playlist_slider.grid(row=1, column=0, padx=(0, 20))
 
         self.subtype_menu = customtkinter.CTkOptionMenu(self.grid_2, width=100, values=[
             "mp3", "mp4", "aac", "oog", "flac", "wav"], command=self.set_subtype)
         self.subtype_menu.set("mp4")
-        self.subtype_menu.grid(row=1, column=1)
+        self.subtype_menu.grid(row=1, column=1, padx=(20, 0))
 
         # add a frame for input and download button
         self.grid_1 = customtkinter.CTkFrame(self, fg_color="transparent")
@@ -114,6 +116,18 @@ class Root(customtkinter.CTk):
         self.download_button = customtkinter.CTkButton(
             self.grid_1, text='Download', command=self.download, width=50)
         self.download_button.grid(row=0, column=1, padx=(2.5, 0))
+
+        try:
+            # Add the certifi root CA cert to the trusted CA cert list
+            if 'REQUESTS_CA_BUNDLE' not in os.environ:
+                os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
+            self.logger.info(
+                f"Set SSL/TLS CA certificate location: {certifi.where()}")
+        except:
+            # if something goes wrong deactivate ssl for pytube
+            pytube.request.verify_ssl = False
+            self.logger.info(
+                f"[ Warning ] : SSL/TLS CA certificates not found. Disabled verify_ssl")
 
     def resource_path(self, relative_path):
         """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -134,7 +148,8 @@ class Root(customtkinter.CTk):
         if self.playlist_slider.get() == 0:
             # Get the URL from the input widget
             self.url = self.url_input.get()
-            self.logger.info(f'[ Analyzing ] : {self.url}')
+            self.logger.info(
+                f'[ Analyzing ] : {self.url}\nThis could take a few seconds!')
             try:
                 if "youtube.com/playlist?list" in self.url or "youtube.com/watch?v" and "&list=" in self.url:
                     self.logger.info(
@@ -152,12 +167,16 @@ class Root(customtkinter.CTk):
                 self.download_handler(self.yt)
 
             except pytube.exceptions.RegexMatchError:
-                self.logger.info("[ Error ] : Could not find link")
+                self.logger.info("\n[ Error ] : Could not find link")
+            except IndexError:
+                self.logger.info(
+                    "\n[ Error ] : Could not find link\nTry to get the link from the 'Share' option in YouTube!")
 
         if self.playlist_slider.get() == 1:
             # Get the URL from the input widget
             self.url = self.url_input.get()
-            self.logger.info(f'[ Analyzing ] : {self.url}')
+            self.logger.info(
+                f'[ Analyzing ] : {self.url}\nThis could take a few seconds!')
             try:
                 if "youtube.com/playlist?list" in self.url or "youtube.com/watch?v" and "&list=" in self.url:
                     self.logger.info(
@@ -310,6 +329,7 @@ class Root(customtkinter.CTk):
         self.percentage_completed = (
             stream.filesize - bytes_remaining) / stream.filesize
         self.progress_bar.set(self.percentage_completed)
+        print(self.percentage_completed)
         self.progress_bar.update()
 
     def completed_function(self, stream, file_path):
