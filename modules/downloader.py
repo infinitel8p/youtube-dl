@@ -9,6 +9,13 @@ logger = logging.getLogger("yt-dlp_app_logger")
 
 
 class YTDLLogger(object):
+    """
+    A custom logger for the YouTube downloader.
+
+    Args:
+        object (object): The base object class. Does not need to be explicitly passed.
+    """
+
     def info(self, msg):
         logger.info(msg)
 
@@ -23,15 +30,17 @@ class YTDLLogger(object):
         logger.error(msg)
 
 
-def download(root_application, url, format):
-    """Download a video from a given URL and convert it to the specified format.
+def download(root_application, url, format, download_dir, filename):
+    """Download a video from a given URL and convert it to the specified format, then save it to the chosen location with the specified filename.
 
     Args:
-        root_application (customtkinter.CTk): The root customtkinter application
-        url (str): The URL of the video to download
-        format (str): One of the following formats: mp3, mp4, aac, ogg, flv, 3gp, m4a, webm, wav
+        root_application (customtkinter.CTk): The root customtkinter application.
+        url (str): The URL of the video to download.
+        format (str): The desired output format (e.g., 'mp3', 'mp4').
+        download_dir (str): The path to save the downloaded video to.
+        filename (str): The base filename chosen by the user (without extension).
     """
-    logger.info("Download complete.")
+    logger.info("Download initiated.")
 
     # binary path
     current_os = platform.system()
@@ -41,7 +50,13 @@ def download(root_application, url, format):
         ffmpeg_path = ffmpeg_path + ".exe"
 
     def progress_hook(d):
-        """A closure that can access root_application's progress_bar."""
+        """
+        A closure that can access root_application's progress_bar.
+
+        Args:
+            d (dict): A dictionary containing the download status and progress.
+        """
+
         if d['status'] == 'downloading':
             if d['total_bytes']:
                 progress = d['downloaded_bytes'] / d['total_bytes']
@@ -52,6 +67,13 @@ def download(root_application, url, format):
                 0, lambda: root_application.progress_bar.set(1))
 
     def postprocessor_hooks(d):
+        """
+        A closure for postprocessing hooks.
+
+        Args:
+            d (dict): A dictionary containing the download status and progress.
+        """
+
         if d['status'] == 'started':
             # logger.info("Postprocessing started.")
             pass
@@ -72,10 +94,11 @@ def download(root_application, url, format):
             'logger': YTDLLogger(),
             'progress_hooks': [progress_hook],
             'postprocessor_hooks': [postprocessor_hooks],
+            'outtmpl': f'{download_dir}/{filename}.%(ext)s',
         }
 
         with YoutubeDL(options) as ydl:
-            ydl.download(["https://www.youtube.com/watch?v=FAyKDaXEAgc"])
+            ydl.download([url])
 
         logger.info("Download complete.")
 
