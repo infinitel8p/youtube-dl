@@ -1,9 +1,12 @@
+import threading
 from tkinter import filedialog
 import customtkinter
 import tempfile
 import requests
 import logging
 import io
+import os
+import sys
 from PIL import Image
 import ffmpeg
 from yt_dlp import YoutubeDL
@@ -31,7 +34,8 @@ class YTDLLogger(object):
         app.logger.info(msg)
 
     def debug(self, msg):
-        app.logger.debug(msg)
+        if "[download]" not in msg:
+            app.logger.debug(msg)
 
     def warning(self, msg):
         app.logger.warning(msg)
@@ -52,6 +56,8 @@ class Root(customtkinter.CTk):
         # Create the GUI
         self.title('YouTube Downloader')
         customtkinter.set_appearance_mode("dark")
+        customtkinter.set_default_color_theme(
+            os.path.join(self.resource_path("themes"), "red.json"))
 
         # add thumbnail placeholder and iconbitmap
         self.yt_icon = "https://cdn-icons-png.flaticon.com/512/1384/1384060.png"
@@ -112,52 +118,60 @@ class Root(customtkinter.CTk):
             self.grid_1, text='Download', command=self.download, width=50)
         self.download_button.grid(row=0, column=1, padx=(2.5, 0))
 
-#    def resource_path(self, relative_path):
-#        """ Get absolute path to resource, works for dev and for PyInstaller """
-#        try:
-#            # PyInstaller creates a temp folder and stores path in _MEIPASS
-#            base_path = sys._MEIPASS
-#        except Exception:
-#            base_path = os.path.abspath(".")
-#
-#        return os.path.join(base_path, relative_path)
+    def resource_path(self, relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+
+        return os.path.join(base_path, relative_path)
 
     def set_subtype(self, event):
         self.subtype_menu.set(event)
 
     def progress_hook(self, d):
         if d['status'] == 'downloading':
-            # Calculate the progress as a percentage
             if d['total_bytes'] is not None:
                 progress = d['downloaded_bytes'] / d['total_bytes']
                 self.progress_bar.set(progress)
+                self.progress_bar.update()
         elif d['status'] == 'finished':
             self.progress_bar.set(1)
-            logging.info("Download complete.")
 
     def download(self):
-        self.progress_bar = customtkinter.CTkProgressBar(self)
+        self.progress_bar = customtkinter.CTkProgressBar(
+            self, mode='determinate')
         self.progress_bar.pack(pady=20)
         self.progress_bar.set(0)
+        self.download_button.configure(state=customtkinter.DISABLED)
 
-        # Set common options
-        options = {
-            'format': 'bestvideo+bestaudio',
-            'postprocessors': [{
-                'key': 'FFmpegVideoConvertor',
-                'preferedformat': self.subtype_menu.get(),  # This forces the specified format
-            }],
-            'logger': YTDLLogger(),
-            'progress_hooks': [self.progress_hook],
-        }
+        def download_thread():
+            # Set common options
+            options = {
+                'format': 'bestvideo+bestaudio',
+                'postprocessors': [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': self.subtype_menu.get(),
+                }],
+                'logger': YTDLLogger(),
+                'progress_hooks': [self.progress_hook],
+            }
 
-        # Download with the specified options
-        with YoutubeDL(options) as ydl:
-            # self.url_input.get()
-            ydl.download(["https://www.youtube.com/watch?v=FAyKDaXEAgc"])
+            # Download with the specified options
+            with YoutubeDL(options) as ydl:
+                ydl.download(["https://www.youtube.com/watch?v=FAyKDaXEAgc"])
 
-        logging.info("Download complete.")
-        self.progress_bar.destroy()
+            self.logger.info("Download complete.")
+            # Use after method to safely interact with the UI from another thread
+            self.after(0, self.progress_bar.destroy)
+            self.after(0, self.download_button.configure(
+                state=customtkinter.NORMAL))
+
+        # Create and start the download thread
+        thread = threading.Thread(target=download_thread)
+        thread.start()
 
 
 if __name__ == "__main__":
