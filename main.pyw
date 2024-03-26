@@ -9,10 +9,19 @@ import os
 import sys
 from PIL import Image
 import modules.downloader as dl
+from yt_dlp import YoutubeDL
+
+version = "1.1"
 
 
 class TkinterHandler(logging.Handler):
-    # Create a handler to display log messages in the GUI
+    """
+    A custom logging handler that displays log messages in a Tkinter Text widget.
+
+    Args:
+        text_widget (customtkinter.CTkTextbox): The Text widget to display the log messages in.
+    """
+
     def __init__(self, text_widget):
         logging.Handler.__init__(self)
         self.text_widget = text_widget
@@ -41,7 +50,7 @@ class Root(customtkinter.CTk):
         self.title('YouTube Downloader')
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme(
-            os.path.join(self.resource_path("themes"), "red.json"))
+            self.resource_path(os.path.join("themes", "red.json")))
         self.resizable(False, False)
         self.geometry("500x500")
 
@@ -110,8 +119,17 @@ class Root(customtkinter.CTk):
             self.grid_1, text='Download', command=self.start_download, width=50)
         self.download_button.grid(row=0, column=1, padx=(2.5, 0))
 
+        self.logger.info(f"YouTube Downloader GUI v{version} started.")
+
     def resource_path(self, relative_path):
-        """ Get absolute path to resource, works for dev and for PyInstaller """
+        """
+        Get absolute path to resource, works for dev and for PyInstaller
+
+        Args:
+            relative_path (str): The relative path to the resource.
+        Returns:
+            str: The absolute path to the resource.
+        """
         try:
             # PyInstaller creates a temp folder and stores path in _MEIPASS
             base_path = sys._MEIPASS
@@ -125,7 +143,42 @@ class Root(customtkinter.CTk):
         self.subtype_menu.set(event)
 
     def start_download(self):
-        """Start the download process"""
+        """
+        Start the download process
+
+        This method is called when the user clicks the download button.
+        """
+
+        def fetch_video_title(url):
+            """
+            Fetch the title of the video to be downloaded
+
+            Args:
+                url (str): The URL of the video to download.
+
+            Returns:
+                str: The title of the video.
+            """
+            self.logger.info("Fetching video title...")
+            with YoutubeDL() as ydl:
+                info = ydl.extract_info(url, download=False)
+                return info.get('title', 'Download')
+
+        # Setting up the save dialog with prefill filename
+        filetypes = [(f"{self.subtype_menu.get().upper()} files",
+                      # ("All files", "*.*")
+                      f"*.{self.subtype_menu.get()}"), ]
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=f".{self.subtype_menu.get()}", filetypes=filetypes, initialfile=fetch_video_title(self.url_input.get()))
+
+        if not file_path:
+            return
+
+        self.download_dir, self.filename_with_extension = os.path.split(
+            file_path)
+        self.filename, self.extension = os.path.splitext(
+            self.filename_with_extension)
+
         self.label.destroy()
         self.progress_bar = customtkinter.CTkProgressBar(
             self.top_grid, mode='determinate')
@@ -133,10 +186,12 @@ class Root(customtkinter.CTk):
         self.progress_bar.set(0)
         self.download_button.configure(state=customtkinter.DISABLED)
 
-        dl.download(self, self.url_input.get(), self.subtype_menu.get())
+        dl.download(self, self.url_input.get(),
+                    self.subtype_menu.get(), self.download_dir, self.filename)
 
 
 if __name__ == "__main__":
     # Run the GUI
     app = Root()
     app.mainloop()
+    # testurl =
