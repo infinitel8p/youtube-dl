@@ -31,7 +31,7 @@ class YTDLLogger(object):
         logger.error(msg)
 
 
-def download(root_application, url, format, download_dir, filename=None):
+def download(root_application, url, file_format, download_dir, filename=None):
     """Download a video from a given URL and convert it to the specified format, then save it to the chosen location with the specified filename.
 
     Args:
@@ -95,7 +95,7 @@ def download(root_application, url, format, download_dir, filename=None):
             'format': 'bestvideo+bestaudio',
             'postprocessors': [{
                 'key': 'FFmpegVideoConvertor',
-                'preferedformat': format,
+                'preferedformat': file_format,
             }],
             'logger': YTDLLogger(),
             'progress_hooks': [progress_hook],
@@ -111,12 +111,7 @@ def download(root_application, url, format, download_dir, filename=None):
             options['outtmpl'] = f"{download_dir}/%(title)s.%(ext)s"
         try:
             with YoutubeDL(options) as ydl:
-                info = ydl.extract_info(url, download=False)
-                if 'entries' in info and not filename:  # It's a playlist and no specific filename is given
-                    first_video_url = info['entries'][0]['webpage_url']
-                    ydl.download([first_video_url])
-                else:
-                    ydl.download([url])
+                ydl.download([url])
         except DownloadError as e:
             logger.error(f"[Error] {e}")
             return

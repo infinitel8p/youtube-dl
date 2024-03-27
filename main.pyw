@@ -100,7 +100,7 @@ class Root(customtkinter.CTk):
 
         self.subtype_menu = customtkinter.CTkOptionMenu(self.grid_2, width=100, values=[
             # flac missing, maybe use ffmpeg to convert
-            "mp3", "mp4", "aac", "ogg", "flv", "3gp", "m4a", "webm", "wav"], command=self.set_subtype)
+            "mp3", "mp4", "aac", "ogg", "flv", "3gp", "m4a", "webm", "wav", "mkv"], command=self.set_subtype)
         self.subtype_menu.set("mp4")
         self.subtype_menu.grid(row=1, column=1)
 
