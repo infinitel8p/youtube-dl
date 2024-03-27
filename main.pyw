@@ -159,26 +159,50 @@ class Root(customtkinter.CTk):
             Returns:
                 str: The title of the video.
             """
-            self.logger.info("Fetching video title...")
-            with YoutubeDL() as ydl:
+            self.logger.info(
+                f'[Analyzing] Fetching video title: {url}\nThis could take a few seconds!')
+
+            options = {
+                'extract_flat': True,
+                'playlist_items': '1',
+            }
+
+            with YoutubeDL(options) as ydl:
                 info = ydl.extract_info(url, download=False)
-                return info.get('title', 'Download')
+                if 'entries' in info:
+                    # if playlist, get the first video title
+                    first_video_info = info['entries'][0] if info['entries'] else {
+                    }
+                    return first_video_info.get('title', 'Download')
+                else:
+                    return info.get('title', 'Download')
 
-        # Setting up the save dialog with prefill filename
-        filetypes = [(f"{self.subtype_menu.get().upper()} files",
-                      # ("All files", "*.*")
-                      f"*.{self.subtype_menu.get()}"), ]
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=f".{self.subtype_menu.get()}", filetypes=filetypes, initialfile=fetch_video_title(self.url_input.get()))
+        # check if is playlist, if not the ask for filename
+        if self.playlist_slider.get() == 1:
+            self.logger.info("[Info] Downloading playlist.")
+            self.download_dir = filedialog.askdirectory()
+            self.filename = None
 
-        if not file_path:
-            self.logger.info("Download cancelled.")
-            return
+            if not self.download_dir:
+                self.logger.warning("[Warning] Download cancelled.")
+                return
+        else:
+            self.logger.info("[Info] Downloading single video.")
+            # Setting up the save dialog with prefill filename
+            filetypes = [(f"{self.subtype_menu.get().upper()} files",
+                          # ("All files", "*.*")
+                          f"*.{self.subtype_menu.get()}"), ]
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=f".{self.subtype_menu.get()}", filetypes=filetypes, initialfile=fetch_video_title(self.url_input.get()))
 
-        self.download_dir, self.filename_with_extension = os.path.split(
-            file_path)
-        self.filename, self.extension = os.path.splitext(
-            self.filename_with_extension)
+            if not file_path:
+                self.logger.warning("[Warning] Download cancelled.")
+                return
+
+            self.download_dir, self.filename_with_extension = os.path.split(
+                file_path)
+            self.filename, self.extension = os.path.splitext(
+                self.filename_with_extension)
 
         self.label.destroy()
         self.progress_bar = customtkinter.CTkProgressBar(
@@ -195,4 +219,4 @@ if __name__ == "__main__":
     # Run the GUI
     app = Root()
     app.mainloop()
-    # testurl = https://www.youtube.com/watch?v=6JYIGclVQdw
+    # testurl = https://www.youtube.com/watch?v=FAyKDaXEAgc
