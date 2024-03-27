@@ -1,15 +1,15 @@
-from tkinter import filedialog
-import customtkinter
-import tempfile
-import requests
-import logging
-import platform
 import io
 import os
 import sys
-from PIL import Image
+import logging
+import platform
+import requests
+import tempfile
+import customtkinter
 import modules.downloader as dl
+from PIL import Image
 from yt_dlp import YoutubeDL
+from tkinter import filedialog
 
 version = "1.1"
 
@@ -172,6 +172,7 @@ class Root(customtkinter.CTk):
             defaultextension=f".{self.subtype_menu.get()}", filetypes=filetypes, initialfile=fetch_video_title(self.url_input.get()))
 
         if not file_path:
+            self.logger.info("Download cancelled.")
             return
 
         self.download_dir, self.filename_with_extension = os.path.split(
@@ -194,4 +195,4 @@ if __name__ == "__main__":
     # Run the GUI
     app = Root()
     app.mainloop()
-    # testurl =
+    # testurl = https://www.youtube.com/watch?v=6JYIGclVQdw
