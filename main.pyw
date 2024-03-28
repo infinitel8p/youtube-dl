@@ -11,7 +11,7 @@ from PIL import Image
 from yt_dlp import YoutubeDL
 from tkinter import filedialog
 
-version = "1.1"
+version = "1.2"
 
 
 class TkinterHandler(logging.Handler):
@@ -121,7 +121,7 @@ class Root(customtkinter.CTk):
 
         self.logger.info(f"YouTube Downloader GUI v{version} started.")
 
-    def resource_path(self, relative_path):
+    def resource_path(self, relative_path: str):
         """
         Get absolute path to resource, works for dev and for PyInstaller
 
@@ -138,8 +138,12 @@ class Root(customtkinter.CTk):
 
         return os.path.join(base_path, relative_path)
 
-    def set_subtype(self, event):
-        """Set the subtype of the video to download"""
+    def set_subtype(self, event: str):
+        """Set the subtype of the video to download
+
+        Args:
+            event (str): The subtype of the video to download.
+        """
         self.subtype_menu.set(event)
 
     def start_download(self):
@@ -149,7 +153,7 @@ class Root(customtkinter.CTk):
         This method is called when the user clicks the download button.
         """
 
-        def fetch_video_title(url):
+        def fetch_video_title(url: str):
             """
             Fetch the title of the video to be downloaded
 

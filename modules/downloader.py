@@ -31,7 +31,7 @@ class YTDLLogger(object):
         logger.error(msg)
 
 
-def download(root_application, url, file_format, download_dir, filename=None):
+def download(root_application: customtkinter.CTk, url: str, file_format: str, download_dir: str, filename: str = None):
     """Download a video from a given URL and convert it to the specified format, then save it to the chosen location with the specified filename.
 
     Args:
@@ -50,7 +50,7 @@ def download(root_application, url, file_format, download_dir, filename=None):
     if current_os == "Windows":
         ffmpeg_path = ffmpeg_path + ".exe"
 
-    def progress_hook(d):
+    def progress_hook(d: dict):
         """
         A closure that can access root_application's progress_bar.
 
@@ -71,7 +71,7 @@ def download(root_application, url, file_format, download_dir, filename=None):
             root_application.after(
                 0, lambda: root_application.progress_bar.set(1))
 
-    def postprocessor_hooks(d):
+    def postprocessor_hooks(d: dict):
         """
         A closure for postprocessing hooks.
 
@@ -89,6 +89,10 @@ def download(root_application, url, file_format, download_dir, filename=None):
             logger.info(f"[Status] Unknown status: {d['status']}")
 
     def download_thread():
+        """
+        A thread to download the video.
+        """
+
         # Set common options
         options = {
             'ffmpeg_location': ffmpeg_path,
