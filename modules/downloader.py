@@ -17,12 +17,27 @@ class YTDLLogger(object):
         object (object): The base object class. Does not need to be explicitly passed.
     """
 
+    def __init__(self, root_application=None):
+        self.root_application = root_application
+
     def info(self, msg):
         logger.info(msg)
 
     def debug(self, msg):
         if "[download]" not in msg:
             logger.debug(msg)
+        if any(keyword in msg for keyword in ["[Merger]", "[VideoConvertor]"]):
+            logger.debug("This could take a while...")
+        custom_messages = {
+            "[youtube:tab] Extracting URL": "Analyzing...",
+            "format(s)": "Downloading...",
+            "[Merger]": "Merging...",
+            "[VideoConvertor]": "Converting...",
+        }
+        for keyword, custom_message in custom_messages.items():
+            if keyword in msg and self.root_application:
+                self.root_application.label.configure(
+                    text=custom_message)
 
     def warning(self, msg):
         logger.warning(msg)
@@ -96,7 +111,7 @@ def download(root_application: customtkinter.CTk, url: str, file_format: str, do
         # Set common options
         options = {
             'ffmpeg_location': ffmpeg_path,
-            'logger': YTDLLogger(),
+            'logger': YTDLLogger(root_application),
             'progress_hooks': [progress_hook],
             'postprocessor_hooks': [postprocessor_hooks],
             'ignoreerrors': True,
@@ -135,9 +150,10 @@ def download(root_application: customtkinter.CTk, url: str, file_format: str, do
 
         # Use after method to safely interact with the UI from the other thread
         root_application.after(0, root_application.progress_bar.destroy)
-        root_application.label = customtkinter.CTkLabel(
-            root_application.top_grid, text="Insert Video Link:")
-        root_application.label.pack()
+        root_application.title = customtkinter.CTkLabel(
+            root_application.progress_bar_grid, text=f"YouTube Downloader v{root_application.version}", font=("Arial", 20))
+        root_application.title.pack()
+        root_application.label.configure(text="Insert Video Link:")
         root_application.after(0, root_application.download_button.configure(
             state=customtkinter.NORMAL))
 

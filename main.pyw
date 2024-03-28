@@ -42,6 +42,7 @@ class Root(customtkinter.CTk):
 
     def __init__(self):
         super().__init__()
+        self.version = version
 
         # Set up the main application logger
         self.logger = logging.getLogger("yt-dlp_app_logger")
@@ -53,7 +54,7 @@ class Root(customtkinter.CTk):
         customtkinter.set_default_color_theme(
             self.resource_path(os.path.join("themes", "red.json")))
         self.resizable(False, False)
-        self.geometry("500x500")
+        self.geometry("550x550")
 
         # add thumbnail placeholder and iconbitmap
         self.yt_icon = "https://cdn-icons-png.flaticon.com/512/1384/1384060.png"
@@ -70,7 +71,16 @@ class Root(customtkinter.CTk):
 
         self.cover_label = customtkinter.CTkLabel(
             self, text="", image=self.cover_tk)
-        self.cover_label.pack(pady=(10, 0))
+        self.cover_label.pack()
+
+        # add frame for progress bar
+        self.progress_bar_grid = customtkinter.CTkFrame(
+            self, fg_color="transparent")
+        self.progress_bar_grid.pack()
+
+        self.title = customtkinter.CTkLabel(
+            self.progress_bar_grid, text=f"YouTube Downloader v{version}", font=("Arial", 20))
+        self.title.pack()
 
         # add frame for title label
         self.top_grid = customtkinter.CTkFrame(self, fg_color="transparent")
@@ -112,7 +122,7 @@ class Root(customtkinter.CTk):
 
         # Set up the URL input widget
         self.url_input = customtkinter.CTkEntry(
-            self.grid_1, width=250, font=("Arial", 10))
+            self.grid_1, width=350, font=("Arial", 10))
         self.url_input.grid(row=0, column=0, padx=(0, 2.5))
 
         # Set up the download button
@@ -120,7 +130,7 @@ class Root(customtkinter.CTk):
             self.grid_1, text='Download', command=self.start_download, width=50)
         self.download_button.grid(row=0, column=1, padx=(2.5, 0))
 
-        self.logger.info(f"YouTube Downloader GUI v{version} started.")
+        self.logger.info(f"[Info] YouTube Downloader GUI v{version} started.")
 
     def resource_path(self, relative_path: str):
         """
@@ -173,8 +183,6 @@ class Root(customtkinter.CTk):
             try:
                 with YoutubeDL(options) as ydl:
                     info = ydl.extract_info(url, download=False)
-                    # The 'format' key in the info_dict holds the best format chosen by yt-dlp
-                    print(info)
 
                     if 'entries' in info:
                         # if playlist, get the first video title
@@ -215,9 +223,9 @@ class Root(customtkinter.CTk):
             self.filename, self.extension = os.path.splitext(
                 self.filename_with_extension)
 
-        self.label.destroy()
+        self.title.destroy()
         self.progress_bar = customtkinter.CTkProgressBar(
-            self.top_grid, mode='determinate')
+            self.progress_bar_grid, mode='determinate', width=250)
         self.progress_bar.pack(pady=(10, 10))
         self.progress_bar.set(0)
         self.download_button.configure(state=customtkinter.DISABLED)
