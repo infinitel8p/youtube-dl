@@ -174,8 +174,9 @@ class Root(customtkinter.CTk):
             Returns:
                 str: The title of the video.
             """
+            self.label.configure(text="Loading title...")
             self.logger.info(
-                f'[Analyzing] Fetching video title: {url}\nThis could take a few seconds!')
+                f'[Analyzing] Fetching video title: {url}\nThis could take a few seconds...')
 
             options = {
                 'playlist_items': '1',
