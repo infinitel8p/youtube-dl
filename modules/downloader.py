@@ -92,16 +92,25 @@ def download(root_application, url, file_format, download_dir, filename=None):
         # Set common options
         options = {
             'ffmpeg_location': ffmpeg_path,
-            'format': 'bestvideo+bestaudio',
-            'postprocessors': [{
-                'key': 'FFmpegVideoConvertor',
-                'preferedformat': file_format,
-            }],
             'logger': YTDLLogger(),
             'progress_hooks': [progress_hook],
             'postprocessor_hooks': [postprocessor_hooks],
             'ignoreerrors': True,
         }
+
+        # Set output format
+        if file_format in ['mp3', 'aac', 'ogg', 'm4a', 'wav']:
+            options['format'] = 'bestaudio/best'
+            options['postprocessors'] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': file_format,
+            }]
+        elif file_format in ['mp4', 'flv', '3gp', 'webm', 'mkv']:
+            options['format'] = 'bestvideo+bestaudio'
+            options['postprocessors'] = [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': file_format,
+            }]
 
         # If download of playlist disabled, download only the first video
         if filename:
