@@ -9,6 +9,7 @@ import customtkinter
 import modules.downloader as dl
 from PIL import Image
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import DownloadError
 from tkinter import filedialog
 
 version = "1.2"
@@ -170,16 +171,20 @@ class Root(customtkinter.CTk):
                 'extract_flat': True,
                 'playlist_items': '1',
             }
-
-            with YoutubeDL(options) as ydl:
-                info = ydl.extract_info(url, download=False)
-                if 'entries' in info:
-                    # if playlist, get the first video title
-                    first_video_info = info['entries'][0] if info['entries'] else {
-                    }
-                    return first_video_info.get('title', 'Download')
-                else:
-                    return info.get('title', 'Download')
+            try:
+                with YoutubeDL(options) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    if 'entries' in info:
+                        # if playlist, get the first video title
+                        first_video_info = info['entries'][0] if info['entries'] else {
+                        }
+                        return first_video_info.get('title', 'Download')
+                    else:
+                        return info.get('title', 'Download')
+            except DownloadError as e:
+                self.logger.error(
+                    f"[Error] Could not fetch video title: {e}")
+                return "Download"
 
         # check if is playlist, if not the ask for filename
         if self.playlist_slider.get() == 1:

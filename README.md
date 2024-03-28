@@ -1,6 +1,8 @@
 # youtube-dl
 A simple YouTube Downloader made with Python and customtkinter. Relies on the yt-dlp library to download videos from YouTube and other sites.
 
+A list of the theorethically supported sites can be found here: [List of supported Sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
+
 ## Installation
 ### How to run on Windows
 Download the `YouTube.Downloader.Windows.zip` and unzip it.
