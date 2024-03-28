@@ -67,15 +67,15 @@
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/Ludo/Desktop/youtube-dl/ffmpeg-binaries;ffmpeg-binaries/"
-  },
-  {
-   "optionDest": "datas",
    "value": "C:/Users/Ludo/Desktop/youtube-dl/modules;modules/"
   },
   {
    "optionDest": "datas",
    "value": "C:/Users/Ludo/Desktop/youtube-dl/themes;themes/"
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/Users/Ludo/Desktop/youtube-dl/ffmpeg-binaries/ffmpeg.exe;ffmpeg-binaries/"
   }
  ],
  "nonPyinstallerOptions": {
