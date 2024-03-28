@@ -12,7 +12,7 @@ from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
 from tkinter import filedialog
 
-version = "1.2"
+version = "1.3"
 
 
 class TkinterHandler(logging.Handler):
@@ -168,12 +168,14 @@ class Root(customtkinter.CTk):
                 f'[Analyzing] Fetching video title: {url}\nThis could take a few seconds!')
 
             options = {
-                'extract_flat': True,
                 'playlist_items': '1',
             }
             try:
                 with YoutubeDL(options) as ydl:
                     info = ydl.extract_info(url, download=False)
+                    # The 'format' key in the info_dict holds the best format chosen by yt-dlp
+                    print(info)
+
                     if 'entries' in info:
                         # if playlist, get the first video title
                         first_video_info = info['entries'][0] if info['entries'] else {

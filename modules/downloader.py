@@ -101,20 +101,23 @@ def download(root_application: customtkinter.CTk, url: str, file_format: str, do
             'postprocessor_hooks': [postprocessor_hooks],
             'ignoreerrors': True,
         }
+        postprocessors = []
 
         # Set output format
         if file_format in ['mp3', 'aac', 'ogg', 'm4a', 'wav']:
-            options['format'] = 'bestaudio/best'
-            options['postprocessors'] = [{
+            options['format'] = 'bestaudio'
+            postprocessors.append({
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': file_format,
-            }]
+            })
         elif file_format in ['mp4', 'flv', '3gp', 'webm', 'mkv']:
             options['format'] = 'bestvideo+bestaudio'
-            options['postprocessors'] = [{
+            postprocessors.append({
                 'key': 'FFmpegVideoConvertor',
                 'preferedformat': file_format,
-            }]
+            })
+
+        options['postprocessors'] = postprocessors
 
         # If download of playlist disabled, download only the first video
         if filename:
