@@ -1,6 +1,7 @@
 import io
 import os
 import sys
+import json
 import logging
 import platform
 import requests
@@ -11,6 +12,8 @@ from PIL import Image
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
 from tkinter import filedialog
+from packaging.version import Version
+from modules.UpdateUi import UpdateUi
 
 version = "1.3"
 
@@ -78,9 +81,9 @@ class Root(customtkinter.CTk):
             self, fg_color="transparent")
         self.progress_bar_grid.pack()
 
-        self.title = customtkinter.CTkLabel(
-            self.progress_bar_grid, text=f"YouTube Downloader v{version}", font=("Arial", 20))
-        self.title.pack()
+        self.title_label = customtkinter.CTkLabel(
+            self.progress_bar_grid, text=f"YouTube Downloader v{self.version}", font=("Arial", 20))
+        self.title_label.pack()
 
         # add frame for title label
         self.top_grid = customtkinter.CTkFrame(self, fg_color="transparent")
@@ -109,11 +112,15 @@ class Root(customtkinter.CTk):
             self.grid_2, text="Playlist")
         self.playlist_slider.grid(row=1, column=0)
 
+        self.subtitle_slider = customtkinter.CTkSwitch(
+            self.grid_2, text="Try Subtitles")
+        self.subtitle_slider.grid(row=1, column=1, padx=(0, 10))
+
         self.subtype_menu = customtkinter.CTkOptionMenu(self.grid_2, width=100, values=[
             # flac missing, maybe use ffmpeg to convert
             "mp3", "mp4", "aac", "ogg", "flv", "3gp", "m4a", "webm", "wav", "mkv"], command=self.set_subtype)
         self.subtype_menu.set("mp4")
-        self.subtype_menu.grid(row=1, column=1)
+        self.subtype_menu.grid(row=1, column=2, padx=(10, 10))
 
         # add a frame for input and download button
         self.grid_1 = customtkinter.CTkFrame(self, fg_color="transparent")
@@ -131,6 +138,53 @@ class Root(customtkinter.CTk):
         self.download_button.grid(row=0, column=1, padx=(2.5, 0))
 
         self.logger.info(f"[Info] YouTube Downloader GUI v{version} started.")
+        self.check_update(self.version)
+
+    def check_update(self, version=version):
+        """Checks for new releases on Github. If a new release is available, it downloads and 'installs' it.
+        Args:
+            version (_type_, optional): The current version of the software. This parameter is used to check if a new version is available.
+            Defaults to the version of the software that is currently running.
+        """
+
+        url = "https://api.github.com/repos/infinitel8p/youtube-dl/releases"
+        self.version = version
+
+        try:
+            # Send a get request to the GitHub releases api
+            releases_response = requests.get(url)
+            releases_data = json.loads(releases_response.text)
+            # Get the latest release versions
+            self.version = Version(self.version.replace("v", ""))
+            self.latest_version = Version(
+                releases_data[0]["tag_name"].replace("v", ""))
+            self.logger.info(
+                f"[check_update] Current version: {self.version} | Latest release: {self.latest_version}")
+            if self.latest_version > self.version:
+                # if update available show update gui
+                update = UpdateUi(self)
+                update.grab_set()
+                self.wait_window(update)
+                # check if update has been started
+                if update.updating:
+                    self.destroy()
+                    import sys
+                    sys.exit()
+        except (KeyError, IndexError):
+            # If there is an error in the response, print an error message
+            self.logger.error(
+                "[check_update] Failed to retrieve version information from GitHub.")
+        except requests.exceptions.HTTPError as errh:
+            self.logger.error(f"[check_update] HTTP Error: {errh}")
+        except requests.exceptions.ConnectionError as errc:
+            self.logger.error(f"[check_update] Error Connecting: {errc}")
+        except requests.exceptions.Timeout as errt:
+            self.logger.error(f"[check_update] Timeout Error: {errt}")
+        except requests.exceptions.RequestException as err:
+            self.logger.error(f"[check_update] Something Else: {err}")
+        except Exception as e:
+            self.logger.error(
+                f"[check_update] An unexpected error occurred: {e}")
 
     def resource_path(self, relative_path: str):
         """
@@ -224,7 +278,7 @@ class Root(customtkinter.CTk):
             self.filename, self.extension = os.path.splitext(
                 self.filename_with_extension)
 
-        self.title.destroy()
+        self.title_label.destroy()
         self.progress_bar = customtkinter.CTkProgressBar(
             self.progress_bar_grid, mode='determinate', width=250)
         self.progress_bar.pack(pady=(10, 10))
@@ -232,7 +286,7 @@ class Root(customtkinter.CTk):
         self.download_button.configure(state=customtkinter.DISABLED)
 
         dl.download(self, self.url_input.get(),
-                    self.subtype_menu.get(), self.download_dir, self.filename)
+                    self.subtype_menu.get(), self.subtitle_slider.get(), self.download_dir, self.filename)
 
 
 if __name__ == "__main__":

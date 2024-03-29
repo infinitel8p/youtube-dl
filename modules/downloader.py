@@ -33,6 +33,7 @@ class YTDLLogger(object):
             "format(s)": "Downloading...",
             "[Merger]": "Merging...",
             "[VideoConvertor]": "Converting...",
+            "[EmbedSubtitle]": "Embedding subtitles..."
         }
         for keyword, custom_message in custom_messages.items():
             if keyword in msg and self.root_application:
@@ -46,13 +47,14 @@ class YTDLLogger(object):
         logger.error(msg)
 
 
-def download(root_application: customtkinter.CTk, url: str, file_format: str, download_dir: str, filename: str = None):
+def download(root_application: customtkinter.CTk, url: str, file_format: str, try_subtitles: int, download_dir: str, filename: str = None):
     """Download a video from a given URL and convert it to the specified format, then save it to the chosen location with the specified filename.
 
     Args:
         root_application (customtkinter.CTk): The root customtkinter application.
         url (str): The URL of the video to download.
-        format (str): The desired output format (e.g., 'mp3', 'mp4').
+        file_format (str): The desired output format (e.g., 'mp3', 'mp4').
+        try_subtitles (int): Whether to download subtitles or not. 1 for yes, 0 for no.
         download_dir (str): The path to save the downloaded video to.
         filename (str, optional): The name of the file to save the video as. Defaults to None.
     """
@@ -140,6 +142,14 @@ def download(root_application: customtkinter.CTk, url: str, file_format: str, do
             options['outtmpl'] = f"{download_dir}/{filename}.%(ext)s"
         else:
             options['outtmpl'] = f"{download_dir}/%(title)s.%(ext)s"
+
+        # If subtitles are requested, download them
+        if try_subtitles == 1:
+            options['writesubtitles'] = True
+            options['allsubtitles'] = True
+            postprocessors.append({'already_have_subtitle': False,
+                                   'key': 'FFmpegEmbedSubtitle'},)
+
         try:
             with YoutubeDL(options) as ydl:
                 ydl.download([url])
@@ -150,9 +160,9 @@ def download(root_application: customtkinter.CTk, url: str, file_format: str, do
 
         # Use after method to safely interact with the UI from the other thread
         root_application.after(0, root_application.progress_bar.destroy)
-        root_application.title = customtkinter.CTkLabel(
+        root_application.title_label = customtkinter.CTkLabel(
             root_application.progress_bar_grid, text=f"YouTube Downloader v{root_application.version}", font=("Arial", 20))
-        root_application.title.pack()
+        root_application.title_label.pack()
         root_application.label.configure(text="Insert Video Link:")
         root_application.after(0, root_application.download_button.configure(
             state=customtkinter.NORMAL))
