@@ -21,3 +21,13 @@ Now follow these steps:
    The app is saved as an exception to your security settings, and you can open it in the future by double-clicking it just as you can any registered app.
 
 source: https://support.apple.com/de-de/guide/mac-help/mh40616/mac
+
+## Run from source
+Requires Python 3.10+ and an `ffmpeg` binary at `ffmpeg-binaries/ffmpeg` (or `ffmpeg.exe` on Windows).
+
+```bash
+pip install -e ".[dev]"   # or: pip install -r requirements.txt
+python -m yt_downloader
+```
+
+Run the tests with `pytest`. Build instructions for standalone executables are in [config/pyinstaller_config.md](config/pyinstaller_config.md).

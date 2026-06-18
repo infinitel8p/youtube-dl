@@ -1,6 +1,8 @@
-customtkinter
-requests
-Pillow
-yt-dlp
-tk
-ffmpeg-python
+# Runtime dependencies. pyproject.toml is the canonical source; this file is kept for
+# `pip install -r requirements.txt` convenience. For development extras (pytest, ruff,
+# mypy, pyinstaller) install the package instead: `pip install -e ".[dev]"`.
+customtkinter>=5.2,<6
+yt-dlp>=2024.1
+Pillow>=10
+requests>=2.31
+ffmpeg-python>=0.2

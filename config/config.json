@@ -7,7 +7,7 @@
   },
   {
    "optionDest": "filenames",
-   "value": "C:/Users/Ludo/Desktop/youtube-dl/main.pyw"
+   "value": "src/yt_downloader/__main__.py"
   },
   {
    "optionDest": "onefile",
@@ -19,15 +19,19 @@
   },
   {
    "optionDest": "icon_file",
-   "value": "C:/Users/Ludo/Desktop/youtube-dl/config/icon.ico"
+   "value": "config/icon.ico"
   },
   {
    "optionDest": "name",
    "value": "YouTube Downloader"
   },
   {
+   "optionDest": "paths",
+   "value": "src"
+  },
+  {
    "optionDest": "clean_build",
-   "value": false
+   "value": true
   },
   {
    "optionDest": "strip",
@@ -43,7 +47,7 @@
   },
   {
    "optionDest": "version_file",
-   "value": "C:/Users/Ludo/Desktop/youtube-dl/config/version.rc"
+   "value": "config/version.rc"
   },
   {
    "optionDest": "uac_admin",
@@ -63,23 +67,19 @@
   },
   {
    "optionDest": "datas",
-   "value": "C:/Python310/Lib/site-packages/customtkinter;customtkinter/"
+   "value": "themes;themes/"
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/Ludo/Desktop/youtube-dl/modules;modules/"
+   "value": "config/icon.ico;config/"
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/Ludo/Desktop/youtube-dl/themes;themes/"
-  },
-  {
-   "optionDest": "datas",
-   "value": "C:/Users/Ludo/Desktop/youtube-dl/ffmpeg-binaries/ffmpeg.exe;ffmpeg-binaries/"
+   "value": "ffmpeg-binaries/ffmpeg.exe;ffmpeg-binaries/"
   }
  ],
  "nonPyinstallerOptions": {
   "increaseRecursionLimit": true,
-  "manualArguments": ""
+  "manualArguments": "--collect-data customtkinter"
  }
 }
