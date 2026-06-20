@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/*
+  Design tokens registered with Tailwind so the markup can use real utilities
+  (bg-surface, text-muted, bg-accent, rounded-card, shadow-card, ...). Appearance
+  (light/dark) and the theme picker just reassign these CSS variables below, and
+  every utility picks the new value up automatically - no per-element dark: variants.
+*/
+@theme {
+  --color-bg: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #f0f1f4;
+  --color-border: #e3e5ea;
+  --color-border-strong: #d3d6dd;
+  --color-fg: #1a1c20;
+  --color-muted: #5d636e;
+  --color-faint: #8a909b;
+  --color-accent: #e5484d;
+  --color-accent-strong: #c93c41;
+  --color-on-accent: #ffffff;
+
+  --color-state-working: #5b9bf6;
+  --color-state-success: #3dd68c;
+  --color-state-error: #ff6b6b;
+  --color-log-warning: #e0922f;
+
+  --radius-card: 14px;
+  --radius-field: 9px;
+
+  --shadow-card: 0 1px 2px rgb(16 18 22 / 0.06), 0 8px 24px rgb(16 18 22 / 0.08);
+
+  --font-sans:
+    "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono: "SF Mono", Menlo, Consolas, monospace;
+
+  --animate-shimmer: shimmer 1.2s ease-in-out infinite;
+  --animate-indeterminate: indeterminate 1.1s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(310%);
+  }
+}
+
+/* Dark surfaces: reassign the color vars (utilities read them via var()). */
+[data-appearance="dark"] {
+  --color-bg: #0e0f12;
+  --color-surface: #16181d;
+  --color-surface-2: #1d2026;
+  --color-border: #262a31;
+  --color-border-strong: #333842;
+  --color-fg: #f2f3f5;
+  --color-muted: #a3aab6;
+  --color-faint: #6b7280;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.45);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  [data-appearance="system"] {
+    --color-bg: #0e0f12;
+    --color-surface: #16181d;
+    --color-surface-2: #1d2026;
+    --color-border: #262a31;
+    --color-border-strong: #333842;
+    --color-fg: #f2f3f5;
+    --color-muted: #a3aab6;
+    --color-faint: #6b7280;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.45);
+    color-scheme: dark;
+  }
+}
+
+/* Theme accent pairs (ported from the old customtkinter themes/*.json). */
+[data-theme="polished"] { --color-accent: #e5484d; --color-accent-strong: #c93c41; }
+[data-theme="red"]      { --color-accent: #f02d2d; --color-accent-strong: #c40d0d; }
+[data-theme="blue"]     { --color-accent: #3b8ed0; --color-accent-strong: #1f6aa5; }
+[data-theme="green"]    { --color-accent: #1aa64b; --color-accent-strong: #048a3a; }
+[data-theme="orange"]   { --color-accent: #ee5a24; --color-accent-strong: #ea2027; }
+[data-theme="marine"]   { --color-accent: #2563ff; --color-accent-strong: #0652dd; }
+[data-theme="rose"]     { --color-accent: #ff7ac6; --color-accent-strong: #d980fa; --color-on-accent: #2a0a22; }
+[data-theme="lavender"] { --color-accent: #9980fa; --color-accent-strong: #5758bb; }
+[data-theme="magenta"]  { --color-accent: #b53393; --color-accent-strong: #833471; }
+[data-theme="peach"]    { --color-accent: #ed4c67; --color-accent-strong: #b53471; }
+[data-theme="brown"]    { --color-accent: #8d6e63; --color-accent-strong: #6b3e2e; }
+[data-theme="yellow"]   { --color-accent: #f6b91a; --color-accent-strong: #f79f1f; --color-on-accent: #241a02; }
+[data-theme="purple"]   { --color-accent: #8e44ad; --color-accent-strong: #663399; }
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-faint);
+  background-clip: padding-box;
+}

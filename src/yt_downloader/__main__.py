@@ -2,13 +2,7 @@
 
 from __future__ import annotations
 
-from .ui.main_window import MainWindow
-
-
-def main() -> None:
-    """Launch the GUI."""
-    MainWindow().mainloop()
-
+from .webui.app import main
 
 if __name__ == "__main__":
     main()

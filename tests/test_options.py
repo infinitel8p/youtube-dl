@@ -16,6 +16,11 @@ def _audio_options(file_format: str):
     )
 
 
+def test_enables_ejs_remote_component_for_youtube_challenges():
+    # required so yt-dlp can solve YouTube's "n" JS challenge and expose all formats
+    assert _audio_options("mp3")["remote_components"] == ["ejs:github"]
+
+
 def test_audio_format_uses_extract_audio_postprocessor():
     options = _audio_options("mp3")
     assert options["format"] == "bestaudio/best"

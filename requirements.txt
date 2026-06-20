@@ -1,8 +1,13 @@
 # Runtime dependencies. pyproject.toml is the canonical source; this file is kept for
 # `pip install -r requirements.txt` convenience. For development extras (pytest, ruff,
 # mypy, pyinstaller) install the package instead: `pip install -e ".[dev]"`.
-customtkinter>=5.2,<6
+#
+# The frontend (web/) is a separate Node toolchain - see web/package.json. Build it with
+# `npm --prefix web ci && npm --prefix web run build` before launching or packaging.
+pywebview>=5
 yt-dlp>=2024.1
-Pillow>=10
 requests>=2.31
-ffmpeg-python>=0.2
+packaging>=23
+pyobjc-framework-WebKit>=10; sys_platform == "darwin"
+pyobjc-framework-Cocoa>=10; sys_platform == "darwin"
+pythonnet>=3; sys_platform == "win32"

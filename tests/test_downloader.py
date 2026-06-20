@@ -2,7 +2,25 @@
 
 from __future__ import annotations
 
-from yt_downloader.downloader import _select_thumbnail, format_duration
+from yt_downloader.downloader import _available_heights, _select_thumbnail, format_duration
+
+
+def test_available_heights_dedupes_and_sorts_desc():
+    info = {
+        "formats": [
+            {"height": 720, "vcodec": "avc1"},
+            {"height": 1080, "vcodec": "vp9"},
+            {"height": 720, "vcodec": "vp9"},  # duplicate resolution, different codec
+            {"height": 240, "vcodec": "none", "acodec": "mp4a"},  # audio-only, ignored
+            {"vcodec": "none", "acodec": "mp4a"},  # audio-only, no height
+        ]
+    }
+    assert _available_heights(info) == (1080, 720)
+
+
+def test_available_heights_empty_without_video():
+    assert _available_heights({}) == ()
+    assert _available_heights({"formats": [{"vcodec": "none", "acodec": "mp4a"}]}) == ()
 
 
 def test_format_duration_minutes():

@@ -29,7 +29,7 @@ def build_ydl_options(
     file_format: str,
     download_dir: str,
     filename: str | None,
-    ffmpeg_location: str,
+    ffmpeg_location: str | None,
     quality: str = "best",
     subtitles: bool = False,
     logger: Any = None,
@@ -43,6 +43,11 @@ def build_ydl_options(
         "ffmpeg_location": ffmpeg_location,
         "ignoreerrors": True,
         "no_color": True,
+        # Let yt-dlp fetch (and cache) the EJS JS-challenge solver so YouTube's "n" signature
+        # solves. Without it, deno runs but the challenge fails ("Some formats may be missing")
+        # and capped resolutions fall back to whatever is still accessible. Ignored by older
+        # yt-dlp that doesn't support remote components.
+        "remote_components": ["ejs:github"],
     }
     if logger is not None:
         options["logger"] = logger
@@ -64,7 +69,9 @@ def build_ydl_options(
         options["merge_output_format"] = file_format
         # remux into the target container (fast, lossless); only re-encodes if the codecs
         # aren't compatible with it - much faster than always converting
-        postprocessors = [{"key": "FFmpegVideoRemuxer", "preferedformat": file_format}]
+        postprocessors: list[dict[str, Any]] = [
+            {"key": "FFmpegVideoRemuxer", "preferedformat": file_format}
+        ]
         if subtitles:
             options["writesubtitles"] = True
             options["subtitleslangs"] = ["all"]

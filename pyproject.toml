@@ -5,17 +5,19 @@ build-backend = "hatchling.build"
 [project]
 name = "yt-downloader"
 dynamic = ["version"]
-description = "A simple desktop YouTube/media downloader built with customtkinter and yt-dlp."
+description = "A simple desktop YouTube/media downloader built with pywebview and yt-dlp."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "infinitel8p" }]
 dependencies = [
-    "customtkinter>=5.2,<6",
+    "pywebview>=5",
     "yt-dlp>=2024.1",
-    "Pillow>=10",
     "requests>=2.31",
-    "ffmpeg-python>=0.2",
     "packaging>=23",
+    # platform webview backends
+    "pyobjc-framework-WebKit>=10; sys_platform == 'darwin'",
+    "pyobjc-framework-Cocoa>=10; sys_platform == 'darwin'",
+    "pythonnet>=3; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]
@@ -24,6 +26,7 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.9",
     "pyinstaller>=6",
+    "pre-commit>=3",
 ]
 
 [project.gui-scripts]

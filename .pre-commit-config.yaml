@@ -1,0 +1,25 @@
+# Run `pip install -e ".[dev]" && pre-commit install` once to enable.
+# Mirrors the CI gates (ruff / mypy / pytest) so failures surface before they reach CI.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^(src|tests)/
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy src
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: pytest
+        name: pytest
+        entry: pytest -q
+        language: system
+        types: [python]
+        pass_filenames: false

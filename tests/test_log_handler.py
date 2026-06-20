@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from yt_downloader.ui.log_handler import strip_ansi
+from yt_downloader.webui.log_handler import strip_ansi
 
 
 def test_strip_ansi_removes_color_codes():

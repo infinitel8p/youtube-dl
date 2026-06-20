@@ -12,3 +12,12 @@ dist/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Frontend (web/) - build artifacts and deps (dist/ already covered above)
+web/node_modules/
+web/.astro/
+
+# Bundled runtime binaries - fetched per platform, never committed.
+# Run `python scripts/fetch_binaries.py` to populate.
+ffmpeg-binaries/*
+!ffmpeg-binaries/.gitkeep

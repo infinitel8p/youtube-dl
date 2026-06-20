@@ -1,5 +1,5 @@
 # youtube-dl
-A simple YouTube Downloader made with Python and customtkinter. Relies on the yt-dlp library to download videos from YouTube and other sites.
+A simple desktop YouTube Downloader. The UI is a web frontend (Astro + Tailwind + Svelte) hosted in a native OS webview via pywebview; the backend relies on the yt-dlp library to download videos from YouTube and other sites.
 
 A list of the theorethically supported sites can be found here: [List of supported Sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
 
@@ -23,11 +23,20 @@ Now follow these steps:
 source: https://support.apple.com/de-de/guide/mac-help/mh40616/mac
 
 ## Run from source
-Requires Python 3.10+ and an `ffmpeg` binary at `ffmpeg-binaries/ffmpeg` (or `ffmpeg.exe` on Windows).
+Requires Python 3.10+ and Node 20+ (the repo provisions it via [mise](https://mise.jdx.dev)).
 
 ```bash
-pip install -e ".[dev]"   # or: pip install -r requirements.txt
+pip install -e ".[dev]"            # or: pip install -r requirements.txt
+npm --prefix web ci                # frontend deps
+npm --prefix web run build         # build the UI to web/dist (required before launching)
+python scripts/fetch_binaries.py   # download ffmpeg + deno for your OS/arch into ffmpeg-binaries/
 python -m yt_downloader
 ```
+
+`scripts/fetch_binaries.py` fetches a static ffmpeg (for merging/remuxing) and deno (the
+JavaScript runtime current YouTube extraction needs); these are not committed to git. The app
+puts them on PATH at startup so downloads work without any system install.
+
+To iterate on the UI in a plain browser (with a mock backend): `npm --prefix web run dev`.
 
 Run the tests with `pytest`. Build instructions for standalone executables are in [config/pyinstaller_config.md](config/pyinstaller_config.md).

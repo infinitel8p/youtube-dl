@@ -31,7 +31,8 @@ class Progress:
 
 @dataclass(frozen=True)
 class Finished:
-    pass
+    # the directory the download was saved to, so the UI can offer "Open folder"
+    output_dir: str | None = None
 
 
 @dataclass(frozen=True)
@@ -39,4 +40,11 @@ class Failed:
     message: str
 
 
-Event = LogMessage | Stage | Progress | Finished | Failed
+@dataclass(frozen=True)
+class Cancelled:
+    """The user cancelled an in-progress download."""
+
+    pass
+
+
+Event = LogMessage | Stage | Progress | Finished | Failed | Cancelled

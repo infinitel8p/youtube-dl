@@ -1,0 +1,117 @@
+name: Release
+
+# Builds one self-contained app per OS and attaches it to the GitHub Release for the tag.
+# Trigger by pushing a tag like v2.1.0 (must match __version__ in src/yt_downloader/__init__.py).
+#
+# Asset naming is a hard contract with the in-app updater (updater.pick_asset matches an
+# asset whose name contains platform.system(), i.e. "Darwin" / "Windows"). The zip must
+# extract to "YouTube Downloader.app" (macOS) / "YouTube Downloader.exe" (Windows) so the
+# self-update helper can swap it in place. See todo.md Section 4.
+#
+# NOTE: macOS here is arm64 only (macos-14). x86_64/universal2 and code-signing/notarization
+# are tracked separately in todo.md - a second Darwin asset would currently collide on the
+# "Darwin" name the updater matches.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            platform: Darwin
+            sep: ":"
+            artifact: YouTube.Downloader.Darwin.zip
+          - os: windows-latest
+            platform: Windows
+            sep: ";"
+            artifact: YouTube.Downloader.Windows.zip
+          - os: ubuntu-latest
+            platform: Linux
+            sep: ":"
+            artifact: YouTube.Downloader.Linux.zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build frontend
+        run: |
+          npm --prefix web ci
+          npm --prefix web run build
+
+      - name: Install package + PyInstaller
+        run: pip install -e ".[dev]"
+
+      - name: Fetch ffmpeg + deno for this runner
+        run: python scripts/fetch_binaries.py
+
+      - name: Build executable
+        shell: bash
+        run: |
+          extra=""
+          if [ "${{ matrix.platform }}" = "Windows" ]; then
+            extra="--version-file config/version.rc"
+          fi
+          pyinstaller --onefile --noconfirm --windowed \
+            --name "YouTube Downloader" \
+            --paths src \
+            --icon config/icon.ico \
+            $extra \
+            --add-data "web/dist${{ matrix.sep }}web/dist" \
+            --add-data "ffmpeg-binaries${{ matrix.sep }}ffmpeg-binaries" \
+            --add-data "config/icon.ico${{ matrix.sep }}config" \
+            --collect-all webview \
+            src/yt_downloader/__main__.py --clean
+
+      - name: Package (macOS)
+        if: matrix.platform == 'Darwin'
+        run: |
+          test -d "dist/YouTube Downloader.app" || (echo "::error::.app not built" && exit 1)
+          ditto -c -k --keepParent "dist/YouTube Downloader.app" "dist/${{ matrix.artifact }}"
+
+      - name: Package (Windows)
+        if: matrix.platform == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/YouTube Downloader.exe")) { throw "exe not built" }
+          Compress-Archive -Path "dist/YouTube Downloader.exe" -DestinationPath "dist/${{ matrix.artifact }}" -Force
+
+      - name: Package (Linux)
+        if: matrix.platform == 'Linux'
+        run: |
+          test -f "dist/YouTube Downloader" || (echo "::error::binary not built" && exit 1)
+          (cd dist && zip "${{ matrix.artifact }}" "YouTube Downloader")
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ matrix.artifact }}
