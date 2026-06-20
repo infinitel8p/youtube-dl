@@ -8,9 +8,10 @@ import threading
 from dataclasses import dataclass
 
 from yt_dlp import YoutubeDL
-from yt_dlp.utils import DownloadError
+from yt_dlp.utils import DownloadCancelled, DownloadError
 
-from .events import Event, Failed, Finished, Progress, Stage
+from .errors import classify_failure
+from .events import Cancelled, Event, Failed, Finished, Progress, Stage
 from .options import build_ydl_options
 from .resources import ffmpeg_path
 
@@ -32,6 +33,9 @@ class _YTDLLogger:
 
     def __init__(self, events: queue.Queue[Event]) -> None:
         self._events = events
+        # the last error line yt-dlp logged - used to classify a swallowed (ignoreerrors)
+        # failure when ydl.download() returns a non-zero code but doesn't raise
+        self.last_error: str | None = None
 
     def _maybe_stage(self, msg: str) -> None:
         for keyword, stage in _STAGE_KEYWORDS:
@@ -54,6 +58,7 @@ class _YTDLLogger:
 
     def error(self, msg: str) -> None:
         logger.error(msg)
+        self.last_error = msg
 
 
 def fetch_title(url: str) -> str:
@@ -64,6 +69,9 @@ def fetch_title(url: str) -> str:
         with YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=False)
     except DownloadError as error:
+        logger.error(f"[Error] Could not fetch video title: {error}")
+        return "Download"
+    except Exception as error:  # noqa: BLE001 - a title lookup must never leave the UI stuck
         logger.error(f"[Error] Could not fetch video title: {error}")
         return "Download"
 
@@ -84,6 +92,7 @@ class Metadata:
     uploader: str | None = None
     duration: int | None = None  # seconds
     thumbnail_url: str | None = None
+    heights: tuple[int, ...] = ()  # available video resolutions (px), high to low
 
 
 def format_duration(seconds: int | None) -> str:
@@ -101,6 +110,16 @@ def _thumbnail_area(thumb: dict) -> int:
     return (thumb.get("width") or 0) * (thumb.get("height") or 0)
 
 
+def _available_heights(info: dict) -> tuple[int, ...]:
+    """Distinct video resolutions (heights) the source actually offers, high to low."""
+    heights = {
+        int(fmt["height"])
+        for fmt in (info.get("formats") or [])
+        if fmt.get("height") and fmt.get("vcodec") not in (None, "none")
+    }
+    return tuple(sorted(heights, reverse=True))
+
+
 def _select_thumbnail(info: dict) -> str | None:
     """Pick the highest-resolution thumbnail URL we can find."""
     usable = [thumb for thumb in (info.get("thumbnails") or []) if thumb.get("url")]
@@ -112,15 +131,17 @@ def _select_thumbnail(info: dict) -> str | None:
     return info.get("thumbnail")
 
 
-def fetch_metadata(url: str) -> Metadata | None:
+def fetch_metadata(url: str, cookies_from_browser: str | None = None) -> Metadata | None:
     """Look up title/channel/duration/thumbnail for the preview card. Does network I/O."""
-    options = {
+    options: dict = {
         "quiet": True,
         "no_color": True,
         "skip_download": True,
         "noplaylist": True,
         "playlist_items": "1",
     }
+    if cookies_from_browser:
+        options["cookiesfrombrowser"] = (cookies_from_browser,)
     try:
         with YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -143,6 +164,7 @@ def fetch_metadata(url: str) -> Metadata | None:
         uploader=info.get("uploader") or info.get("channel"),
         duration=info.get("duration"),
         thumbnail_url=_select_thumbnail(info),
+        heights=_available_heights(info),
     )
 
 
@@ -151,10 +173,19 @@ class DownloadManager:
         self._events = events
         self._thread: threading.Thread | None = None
         self._announced_download = False
+        self._cancelled = False
 
     @property
     def is_running(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
+
+    def cancel(self) -> bool:
+        """Request cancellation of the running download. Returns False if nothing runs."""
+        if not self.is_running:
+            return False
+        self._cancelled = True
+        logger.info("[Info] Cancelling download...")
+        return True
 
     def start(
         self,
@@ -165,6 +196,7 @@ class DownloadManager:
         filename: str | None,
         quality: str = "best",
         subtitles: bool = False,
+        cookies_from_browser: str | None = None,
     ) -> bool:
         """Kick off a download. Returns False if one is already running."""
         if self.is_running:
@@ -180,6 +212,7 @@ class DownloadManager:
                 "filename": filename,
                 "quality": quality,
                 "subtitles": subtitles,
+                "cookies_from_browser": cookies_from_browser,
             },
             daemon=True,
         )
@@ -187,6 +220,10 @@ class DownloadManager:
         return True
 
     def _progress_hook(self, status: dict) -> None:
+        # Raising here is yt-dlp's supported way to stop a download mid-flight;
+        # DownloadCancelled is not swallowed by ignoreerrors.
+        if self._cancelled:
+            raise DownloadCancelled("Cancelled by user.")
         if status.get("status") != "downloading":
             return
         if not self._announced_download:
@@ -217,10 +254,13 @@ class DownloadManager:
         filename: str | None,
         quality: str,
         subtitles: bool,
+        cookies_from_browser: str | None = None,
     ) -> None:
         logger.info("[Info] Download initiated.")
         self._announced_download = False
+        self._cancelled = False
         self._events.put(Stage("Preparing..."))
+        ytdl_logger = _YTDLLogger(self._events)
         options = build_ydl_options(
             file_format=file_format,
             download_dir=download_dir,
@@ -228,29 +268,47 @@ class DownloadManager:
             ffmpeg_location=ffmpeg_path(),
             quality=quality,
             subtitles=subtitles,
-            logger=_YTDLLogger(self._events),
+            cookies_from_browser=cookies_from_browser,
+            logger=ytdl_logger,
             progress_hooks=[self._progress_hook],
             postprocessor_hooks=[self._postprocessor_hook],
         )
         try:
             with YoutubeDL(options) as ydl:
                 retcode = ydl.download([url])
+        except DownloadCancelled:
+            logger.info("[Info] Download cancelled.")
+            self._events.put(Cancelled())
+            return
         except DownloadError as error:
-            logger.error(f"[Error] {error}")
-            self._events.put(Failed(str(error)))
+            self._fail(str(error))
             return
         except Exception as error:  # noqa: BLE001 - surface anything unexpected to the UI
-            logger.error(f"[Error] Unexpected failure: {error}")
-            self._events.put(Failed(str(error)))
+            logger.error("[Error] Unexpected failure.")
+            self._fail(str(error))
+            return
+
+        if self._cancelled:
+            logger.info("[Info] Download cancelled.")
+            self._events.put(Cancelled())
             return
 
         # ignoreerrors swallows extraction failures (e.g. DRM) without raising, so a
         # non-zero code is the only signal that nothing actually downloaded.
         if retcode:
             logger.error("[Error] Download finished with errors - nothing was saved.")
-            self._events.put(Failed("Download failed - see the activity log."))
+            self._fail(ytdl_logger.last_error or "")
             return
 
         logger.info("[Info] Download complete.")
         self._events.put(Progress(1.0))
-        self._events.put(Finished())
+        self._events.put(Finished(output_dir=download_dir))
+
+    def _fail(self, error_text: str) -> None:
+        """Classify an error into a friendly reason and emit a Failed event."""
+        failure = classify_failure(error_text)
+        if error_text and error_text not in failure.reason:
+            logger.error(f"[Error] {error_text}")
+        if failure.hint:
+            logger.warning(f"[Warning] {failure.hint}")
+        self._events.put(Failed(failure.reason))

@@ -67,7 +67,7 @@
   },
   {
    "optionDest": "datas",
-   "value": "themes;themes/"
+   "value": "web/dist;web/dist/"
   },
   {
    "optionDest": "datas",
@@ -75,11 +75,11 @@
   },
   {
    "optionDest": "datas",
-   "value": "ffmpeg-binaries/ffmpeg.exe;ffmpeg-binaries/"
+   "value": "ffmpeg-binaries;ffmpeg-binaries/"
   }
  ],
  "nonPyinstallerOptions": {
   "increaseRecursionLimit": true,
-  "manualArguments": "--collect-data customtkinter"
+  "manualArguments": "--collect-all webview"
  }
 }

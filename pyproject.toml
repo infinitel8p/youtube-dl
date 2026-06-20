@@ -5,17 +5,20 @@ build-backend = "hatchling.build"
 [project]
 name = "yt-downloader"
 dynamic = ["version"]
-description = "A simple desktop YouTube/media downloader built with customtkinter and yt-dlp."
+description = "A simple desktop YouTube/media downloader built with pywebview and yt-dlp."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "infinitel8p" }]
 dependencies = [
-    "customtkinter>=5.2,<6",
+    "pywebview>=5",
     "yt-dlp>=2024.1",
-    "Pillow>=10",
     "requests>=2.31",
-    "ffmpeg-python>=0.2",
     "packaging>=23",
+    "pyperclip>=1.8",  # OS clipboard read for the Paste button (webview clipboard API is unreliable)
+    # platform webview backends
+    "pyobjc-framework-WebKit>=10; sys_platform == 'darwin'",
+    "pyobjc-framework-Cocoa>=10; sys_platform == 'darwin'",
+    "pythonnet>=3; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]
@@ -24,6 +27,10 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.9",
     "pyinstaller>=6",
+    # build-time only: lets PyInstaller convert config/icon.ico to the per-platform icon
+    # format (.icns on macOS); without it the frozen build fails on the icon step.
+    "pillow>=10",
+    "pre-commit>=3",
 ]
 
 [project.gui-scripts]

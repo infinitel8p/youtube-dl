@@ -1,0 +1,33 @@
+---
+import App from "../components/App.svelte";
+import "../styles/global.css";
+---
+
+<!doctype html>
+<html lang="en" data-theme="polished" data-appearance="system">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>YouTube Downloader</title>
+    <script is:inline>
+      // Apply the saved theme/appearance before first paint to avoid a flash.
+      try {
+        const root = document.documentElement;
+        const theme = localStorage.getItem("ytdl.theme");
+        const appearance = localStorage.getItem("ytdl.appearance");
+        if (theme) root.setAttribute("data-theme", theme);
+        if (appearance) root.setAttribute("data-appearance", appearance);
+      } catch (_) {}
+
+      // Buffer events that arrive before the Svelte app registers its handler.
+      window.__ytdlQueue = [];
+      window.__ytdlEvent = function (event) {
+        if (window.__ytdlHandler) window.__ytdlHandler(event);
+        else window.__ytdlQueue.push(event);
+      };
+    </script>
+  </head>
+  <body>
+    <App client:load />
+  </body>
+</html>
